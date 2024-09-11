@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header section with animated text -->
+  <div class="header">
+    <h1 class="typing-text" data-text="Magic MCQ"></h1>
+  </div>
+
+  <!-- Button container with two buttons -->
+  <div class="button-container">
+    <!-- Link to HSC MCQ test page -->
+    <a href="subject.html" class="button button-hsc">
+      <span class="typing-text" data-text="HSC"></span>
+      <span class="small-text typing-text" data-text="MCQ test"></span>
+    </a>
+  </div>
+
+  <!-- Footer section -->
+  <div class="footer">
+    <span class="typing-text" data-text="Powered by Nakib Hassan Prince"></span>
+  </div>
+
+  <!-- Boxes section moved to the bottom -->
+  <div class="boxes">
+    <div class="box-hsc"></div>
+  </div>
+
+  <script>
+    // Typing speed controller
+    const typingSpeed = 40; // Adjust this value to control the typing speed
+
+    function typeText(element, text, speed, callback) {
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, speed);
+        } else {
+          if (typeof callback === 'function') callback();
+        }
+      }
+      typing();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const typingElements = document.querySelectorAll(".typing-text");
+      let delay = 0;
+
+      // Iterate through each element and apply typing effect sequentially
+      typingElements.forEach((el, index) => {
+        const text = el.getAttribute("data-text");
+        el.textContent = '';
+        // Start typing with a delay based on the element's index
+        setTimeout(() => {
+          typeText(el, text, typingSpeed, () => {
+            // Make the parent button visible after typing
+            if (el.parentElement.classList.contains('button')) {
+              el.parentElement.style.opacity = '1';
+            }
+            // Show corresponding box
+            showBox(text);
+          });
+        }, delay);
+        delay += text.length * typingSpeed + 500; // Adjust timing as needed for a sequential effect
+      });
+    });
+
+    function showBox(text) {
+      const boxes = document.querySelectorAll('.boxes > div');
+      boxes.forEach(box => {
+        if (box.classList.contains(`box-${text.toLowerCase()}`)) {
+          box.classList.add('active');
+        } else {
+          box.classList.remove('active');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
