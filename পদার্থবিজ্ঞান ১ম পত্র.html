@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="bn">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="পদার্থবিজ্ঞান ১ম পত্র.css" />
+        <title>পদার্থবিজ্ঞান ১ম পত্র</title>
+    </head>
+    <body>
+        <a href="subject.html" class="floating-box">
+            <div class="arrow"></div>
+        </a>
+        <div class="container">
+            <div class="header">
+                <h1 class="typing-text" data-text="Magic MCQ"></h1>
+                <h2 class="typing-text" data-text="পদার্থবিজ্ঞান ১ম পত্র"></h2>
+
+                <div class="header-row">
+                    <h3
+                        class="typing-text"
+                        data-text="অধ্যায় নির্ধারণ করুন"
+                    ></h3>
+                    <div
+                        class="topic-selection"
+                        data-subject-name="Topic Selection"
+                        onclick="openQuiz('Topic Selection')"
+                    >
+                        <span
+                            class="typing-text"
+                            data-text="Topic Selection"
+                        ></span>
+                    </div>
+                    <div
+                        class="edit"
+                        data-subject-name="Add & Modify"
+                        onclick="openEdit()"
+                    >
+                        <span
+                            class="typing-text"
+                            data-text="Add & Modify"
+                        ></span>
+                    </div>
+                </div>
+            </div>
+            <div class="subject" data-subject-name="দ্বিতীয় অধ্যায় : ভেক্টর">
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="দ্বিতীয় অধ্যায় : ভেক্টর"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('দ্বিতীয় অধ্যায় : ভেক্টর')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'দ্বিতীয় অধ্যায় : ভেক্টর')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'দ্বিতীয় অধ্যায় : ভেক্টর')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-দ্বিতীয় অধ্যায় : ভেক্টর"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+
+            
+            <div
+                class="subject"
+                data-subject-name="চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা"
+                ></span>
+
+                <div
+                    class="arr"
+                    onclick="openQuiz('চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা')">
+                    
+                </button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-চতুর্থ অধ্যায় : নিউটনিয়ন বলবিদ্যা"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+            <div
+                class="subject"
+                data-subject-name="পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-পঞ্চম অধ্যায় : কাজ, শক্তি ও ক্ষমতা"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+            <div
+                class="subject"
+                data-subject-name="ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-ষষ্ঠ অধ্যায় : মহাকর্ষ ও অভিকর্ষ"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+            <div
+                class="subject"
+                data-subject-name="সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="partial-button"
+                    data-text="(আংশিক)"
+                    onclick="toggleCollapse(this)"
+                ></button>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম')"
+                ></button>
+            </div>
+            <div class="collapsible-content">
+                <div
+                    class="collapsible-box"
+                    class="typing-text"
+                    data-text="● পদার্থের আন্তঃআনবিক আকর্ষণ ও বিকর্ষণ বল
+০ কঠিন
+০ তরল তরল
+০ বায়বীয়
+● পদার্থের বন্ধন
+০ আয়নিক বন্ধন
+০ সমযোজী বন্ধন
+০ ধাতব বন্ধন
+০ ভ্যান্ডারওয়ালস বন্ধন
+● আন্তঃআনবিক বল ও পদার্থের স্থিতিস্থাপকতা
+০ স্থিতিস্থাপকতা সম্পর্কিত রাশিমালা
+০ স্থিতিস্থাপকতা
+০ নমনীয় বস্তু
+০ পূর্ণ স্থিতিস্থাপক বস্তু
+০ পূর্ণ দৃঢ় বস্তু
+০ স্থিতিস্থাপক সীমা
+০ অসহ ভার, অসহ পীড়ন, স্থিতিস্থাপক ক্লান্তি
+০ বিকৃতি (দৈর্ঘ্য আকার, আয়তন)
+০ পীড়ন (দৈর্ঘ্য, আকার, আয়তন)
+● হকের সূত্র 
+● পীড়ন-বিকৃতির সম্পর্ক
+● স্থিতিস্থাপক গুণাঙ্ক
+০ ইয়ং এর স্থিতিস্থাপক
+০ গুণাঙ্ক
+০ দৃঢ়তার স্থিতিস্থাপক গুণাঙ্ক
+০ আয়তনের স্থিতিস্থাপক গুণাঙ্ক
+● পয়সনের অনুপাত"
+                    style="white-space: pre-wrap"
+                ></div>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-সপ্তম অধ্যায় : পদার্থের গঠনিক ধর্ম"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+            <div
+                class="subject"
+                data-subject-name="অষ্টম অধ্যায় : পর্যাবৃত্ত গতি"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="অষ্টম অধ্যায় : পর্যাবৃত্ত গতি"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('অষ্টম অধ্যায় : পর্যাবৃত্ত গতি')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'অষ্টম অধ্যায় : পর্যাবৃত্ত গতি')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'অষ্টম অধ্যায় : পর্যাবৃত্ত গতি')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-অষ্টম অধ্যায় : পর্যাবৃত্ত গতি"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+
+            <div
+                class="subject"
+                data-subject-name="দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব"
+            >
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব"
+                ></span>
+                <div
+                    class="arr"
+                    onclick="openQuiz('দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব')"
+                >
+                    <div></div>
+                </div>
+                <button
+                    class="a-button"
+                    data-text="(ক)"
+                    onclick="toggleSection(this, 'a', 'দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব')"
+                ></button>
+                <button
+                    class="b-button"
+                    data-text="(খ)"
+                    onclick="toggleSection(this, 'b', 'দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব')"
+                ></button>
+            </div>
+            <div
+                class="content-container"
+                id="content-container-দশম অধ্যায় : আদর্শ গ্যাস ও গ্যাসের গতি তত্ত্ব"
+            >
+                <!-- New box for each question will be added here -->
+            </div>
+        </div>
+        <div
+            id="quiz-container"
+            style="position: fixed; z-index: 2100; display: none"
+        >
+            <iframe
+                id="quiz-iframe"
+                src="quiz.html"
+                style="
+                    min-height: 100vh;
+                    width: 100vw;
+                    backdrop-filter: blur(2.5px);
+                "
+            ></iframe>
+        </div>
+        <div
+            id="Edit-container"
+            style="position: fixed; z-index: 2101; display: none"
+        >
+            <iframe
+                id="Edit-iframe"
+                src="Edit.html"
+                style="
+                    min-height: 100vh;
+                    width: 100vw;
+                    backdrop-filter: blur(2.5px);
+                "
+            ></iframe>
+        </div>
+        <script src="abtyping (part).js"></script>
+    </body>
+</html>

@@ -1,0 +1,172 @@
+* {
+   -webkit-tap-highlight-color: transparent;
+}
+body {
+  font-family: Arial, sans-serif;
+  background-color: #fff;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.container {
+  width: 100%;
+  max-width: auto;
+  margin: auto;
+  padding: 20px;
+  background-color: #fff;
+  margin-top: 17vh; /* Default margin for larger screens */
+  margin-bottom: 5vh;
+
+  
+}
+
+.header {
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  background-color: #fff;
+  z-index: 1000;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.header h1 {
+  font-size: 31px;
+}
+.header h2 {
+  font-size: 20px;
+}
+.header h3 {
+  font-size: 17px;
+  opacity: 0.75;
+  font-weight: normal;
+}
+
+
+.head-row{
+  position: fixed;
+   justify-content: space-around;
+
+
+}
+
+.topic-selection {
+  position: fixed;
+  top: 122.5px;
+  right: 20px;
+  width: auto; 
+  height: auto;
+  margin-left: 300px;
+  padding-right: 7px;
+  padding-left: 7px;
+  border-radius: 10px;
+  border: 0.5px solid #3f4868;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: #fff;
+  opactiy: 0.5;
+  background: linear-gradient(to right, #ea517c, #b478f1);
+}
+
+
+.edit {
+  position: fixed;
+  top: 122.5px;
+  left: 20px;
+  width: auto; 
+  height: auto;
+  color: #fff;
+  font-size: 12.5px;
+  margin-right: 280px;
+  padding-right: 10px;
+  padding-left: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 0.5px solid #3f4868;
+  cursor: pointer;
+  opactiy: 0.5;
+  background: linear-gradient(to right, #ea517c, #b478f1);
+}
+
+
+.subject {
+  display: flex;
+  align-items: center;
+  background-color: rgba(173, 216, 238, 0.5);
+  padding: 10px;
+  top:-17.5px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #000;
+  border: 0.5px solid #cfcfdd;
+  position: relative;
+  cursor: pointer;
+  padding-right: 25px;
+}
+
+.subject-icon {
+  /* ... other styles ... */
+  width: 35px;  /* Adjust as needed */
+  height: 35px; /* Adjust as needed */
+  display: flex;
+  margin-right: 9px; 
+}
+
+.subject span:last-child {
+  opacity: 0.75;
+}
+
+.arr div {
+  position: absolute;
+  height: 11.5px;
+  width: 11.5px;
+  border-top: 2.5px solid #202020;
+  border-left: 2.5px solid #202020;
+  transform: translateY(-50%) rotate(135deg);
+  right: 10px;
+  top: 50%;
+  border-radius: 2.5px; /* Adjust the value as needed */
+}
+
+.floating-box {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #ebe6e6;
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  transition: 0.4s ease;
+  cursor: pointer;
+  z-index: 1001;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow {
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  border-top: 2px solid #202020;
+  border-left: 2px solid #202020;
+  transform: rotate(-45deg);
+  top: 30%;
+  left: 38%;
+  border-radius: 2.5px; /* Adjust the value as needed */
+}
+
+/* Fix progress scroll issue */
+html, body {
+  scroll-behavior: smooth;
+}

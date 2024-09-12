@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8" />
+        <title>Navbar Menu Hover Effect</title>
+        <link rel="stylesheet" href="Edit.css" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="heading-floating-edit">
+                <div class="floating-edit">
+                    <div class="floating-close" onclick="closeEdit()">
+                        <div class="close"></div>
+                    </div>
+                </div>
+                <h1 class="heading" id="start-screen-heading"></h1>
+            </div>
+
+            <nav>
+                <a href="#" onclick="showSectionA(this, 'ab.json', 'a')"></a>
+                <a href="#" onclick="showSectionB(this, 'ab.json', 'b')"></a>
+                <a href="#" onclick="setActive(this, 'questions.json')"></a>
+                <div class="animation" id="animation-bar"></div>
+            </nav>
+
+            <div class="subject-selection" style="display: none">
+                <label for="subject-dropdown"></label>
+                <select id="subject-dropdown">
+                    <option value="">Select Subject</option>
+                </select>
+            </div>
+
+            <div class="button">
+                <button class="btn Add" id="add-button"></button>
+                <button class="Modify"></button>
+            </div>
+
+            <div class="wrap-input-17" style="display: none">
+                <div class="search-box">
+                    <button class="btn-search">🔍</button>
+                    <input type="text" class="input-search" placeholder="Type to Search..." />
+                    <button class="btn-clear" class="btn" style="display: none">Clear</button>
+                </div>
+            </div>
+
+            <div class="search-results">
+                <!-- Content for search results will go here -->
+            </div>
+
+           <!-- Add Question Form For MCQ -->
+<div id="add-question-form-mcq" class="add-question-form box" style="display: none">
+    <h4 id="add-question-form-heading" class="add-question-form-heading"></h4>
+    <textarea id="new-question-text" placeholder="Enter your question"></textarea>
+
+    <!-- Updated ID for file input -->
+    <input type="file" id="upload-question-images" accept="image/*" name="images[]" multiple>
+    <div id="image-placeholder-message" style="display: none;"></div>
+    <ul id="new-options-list">
+        <li><textarea class="new-option-input" placeholder="Option 1"></textarea></li>
+        <li><textarea class="new-option-input" placeholder="Option 2"></textarea></li>
+        <li><textarea class="new-option-input" placeholder="Option 3"></textarea></li>
+        <li><textarea class="new-option-input" placeholder="Option 4"></textarea></li>
+    </ul>
+    <textarea id="new-answer-text" placeholder="Enter the correct answer"></textarea>
+    <br />
+    <button id="save-new-question-mcq" class="save-new-question">Add Question</button>
+    <button id="cancel-add-question-mcq" class="cancel-add-question">Cancel</button>
+</div>
+
+<!-- Add Question Form for 'a' and 'b' -->
+<div id="add-question-form-ab" class="add-question-form box" style="display: none">
+    <h4 id="add-question-form-heading-ab" class="add-question-form-heading"></h4>
+    <textarea class="question-input" placeholder="Enter your question"></textarea>
+
+    <!-- Updated ID for file input -->
+    <input type="file" id="upload-ab-images" accept="image/*" name="images[]" multiple>
+    <div id="image-placeholder-message-ab" style="display: none;"></div>
+    <br />
+    <textarea class="edit-explanation-input" placeholder="Enter explanation"></textarea>
+    <br />
+    <button id="save-new-question-ab" class="save-new-question">Add Question</button>
+    <button id="cancel-add-question-ab" class="cancel-add-question">Cancel</button>
+</div>
+
+
+
+        </div>
+
+        <script src="Edit.js"> </script>
+      
+   
+
+    </body>
+</html>

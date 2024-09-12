@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="subject.css">
+    <title>Magic MCQ</title>
+</head>
+<body>
+    <a href="index.html" class="floating-box">
+        <div class="arrow"></div>
+    </a>
+    <div class="container">
+        <div class="header" id="header">
+            <h1 class="typing-text" data-text="Magic MCQ"></h1>
+            <h2 class="typing-text" data-text="বিষয় নির্ধারণ করুন"></h2>
+        </div>
+        <a href="বাংলা ১ম পত্র.html" class="subject">
+            <span class="subject-icon-ban"><img src="ban.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="বাংলা ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="বাংলা ২য় পত্র.html" class="subject">
+            <span class="subject-icon-ban"><img src="ban.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="বাংলা ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="ইংরেজি ১ম পত্র.html" class="subject">
+            <span class="subject-icon-eng"><img src="eng.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="ইংরেজি ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="ইংরেজি ২য় পত্র.html" class="subject">
+            <span class="subject-icon-eng"><img src="eng.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="ইংরেজি ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="তথ্য ও যোগাযোগ প্রযুক্তি.html" class="subject">
+            <span class="subject-icon-ICT"><img src="ICT.png" alt="subject icon"></span>
+            <span class="typing-text" data-text="তথ্য ও যোগাযোগ প্রযুক্তি"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="উচ্চতর গণিত ১ম পত্র.html" class="subject">
+            <span class="subject-icon-hm"><img src="hm.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="উচ্চতর গণিত ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="উচ্চতর গণিত ২য় পত্র.html" class="subject">
+            <span class="subject-icon-hm"><img src="hm.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="উচ্চতর গণিত ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="পদার্থবিজ্ঞান ১ম পত্র.html" class="subject">
+            <span class="subject-icon-phy"><img src="physic.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="পদার্থবিজ্ঞান ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="পদার্থবিজ্ঞান ২য় পত্র.html" class="subject">
+            <span class="subject-icon-phy"><img src="physic.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="পদার্থবিজ্ঞান ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="রসায়ন ১ম পত্র.html" class="subject">
+            <span class="subject-icon"></span>
+            <span class="typing-text" data-text="রসায়ন ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="রসায়ন ২য় পত্র.html" class="subject">
+            <span class="subject-icon"></span>
+            <span class="typing-text" data-text="রসায়ন ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="জীববিজ্ঞান ১ম পত্র.html" class="subject">
+            <span class="subject-icon-zo"><img src="zo.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="জীববিজ্ঞান ১ম পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+        <a href="জীববিজ্ঞান ২য় পত্র.html" class="subject">
+            <span class="subject-icon"></span>
+            <span class="typing-text" data-text="জীববিজ্ঞান ২য় পত্র"></span>
+            <div class="arr"><div></div></div>
+        </a>
+    </div>
+    <script>
+        function typeText(element, text, speed) {
+            let i = 0;
+            function typing() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typing, speed);
+                }
+            }
+            typing();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const typingElements = document.querySelectorAll(".typing-text");
+            typingElements.forEach(el => {
+                const text = el.getAttribute("data-text");
+                el.textContent = '';
+                let speed = 35; // Default typing speed
+                typeText(el, text, speed);
+            });
+
+            // Adjust container top margin based on header height
+            const header = document.getElementById("header");
+            const container = document.querySelector(".container");
+            function adjustContainerMargin() {
+                const headerHeight = header.offsetHeight;
+                container.style.marginTop = headerHeight + "px";
+            }
+
+            adjustContainerMargin();
+            window.addEventListener("resize", adjustContainerMargin);
+
+            // Scroll Restoration (using sessionStorage)
+            window.history.scrollRestoration = 'manual'; // Disable default scroll restoration
+            restoreScrollPosition(); // Call the function on page load 
+
+            window.addEventListener('popstate', function(event) {
+                restoreScrollPosition(); // Also call it on popstate 
+            });
+
+            window.addEventListener('scroll', () => {
+                sessionStorage.setItem('scrollPosition', window.scrollY);
+            });
+        });
+
+        function restoreScrollPosition() {
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                window.scrollTo({
+                    top: scrollPosition,
+                    behavior: 'smooth'
+                });
+                sessionStorage.removeItem('scrollPosition');
+            }
+        }
+    </script>
+</body>
+</html>

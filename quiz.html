@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="quiz.css" />
+    <title>quiz-start-screen</title>
+    <!--quiz-start-screen.html-->
+  </head>
+  <body>
+    <div class="start-screen">
+      <div class="container">
+        <div class="floating-close" onclick="closeQuiz()">
+          <div class="close"></div>
+        </div>
+        <h1 class="heading" id="start-screen-heading"></h1>
+
+        <div class="options">
+          <div class="time-limit">
+            <label for="time-limit" id="time-limit-label"></label>
+            <input type="number" id="time-limit" value="30" min="30" />
+          </div>
+          <div class="question-limit">
+            <label for="question-limit" id="question-limit-label"></label>
+            <input type="number" id="question-limit" value="30" min="30" />
+          </div>
+        </div>
+        <p class="error-message hide" id="error-message"></p>
+        <button class="btn start" id="start-button">কুইজ শুরু করুন</button>
+      </div>
+    </div>
+    <div class="quiz hide" id="quiz-section">
+      <div class="u-container">
+        <div class="f" id="quiz-heading">
+          <span class="quiz-heading" id="fixed"></span>
+        </div>
+
+        <div class="number-progress" id="fixed">
+          <div class="number-container" id="overlap-adjust">
+            <div class="number">
+              প্রশ্ন <span class="current"></span> / <span class="total"></span>
+            </div>
+          </div>
+          <div class="progress" id="overlap-adjust">
+            <div class="progress-bar"></div>
+            <span class="progress-text"></span>
+          </div>
+          <div class="timer-container">
+            <div class="timer"></div>
+          </div>
+        </div>
+        <div class="question" id="relative"></div>
+      </div>
+      <div class="answer-wrapper" id="answer-wrapper"></div>
+
+      <div class="button-wrapper">
+        <button class="btn previous" disabled>Previous</button>
+        <button class="btn stop">Stop</button>
+        <button class="btn next">Next</button>
+      </div>
+    </div>
+
+    <div class="end-screen hide">
+      <div class="container">
+        <h1 class="heading" id="end-screen-heading"></h1>
+        <div class="score">
+          <span class="score-text">score</span>
+          <div>
+            <span class="final-score">0</span> /
+            <span class="total-score"></span>
+          </div>
+        </div>
+        <div class="answer-status">
+          <div>Correct: <span class="correct-count">0</span></div>
+          <br />
+          <div>Wrong: <span class="wrong-count">0</span></div>
+          <br />
+          <div>Unanswered: <span class="not-answered-count">0</span></div>
+        </div>
+        <button class="btn restart">পুনরায় শুরু করুন</button>
+      </div>
+    </div>
+    
+    <script src="quiz.js"></script>
+    <script>
+      window.addEventListener("message", function(event) {
+        if (event.data === "reloadQuiz") {
+          location.reload(); // Reloads the current page
+        }
+      });
+    </script>
+  </body>
+</html>

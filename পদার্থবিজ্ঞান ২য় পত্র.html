@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="পদার্থবিজ্ঞান ২য় পত্র.css">
+    <title>পদার্থবিজ্ঞান ২য় পত্র</title>
+</head>
+<body>
+    <a href="subject.html" class="floating-box">
+        <div class="arrow"></div>
+    </a>
+    <div class="container">
+        <div class="header">
+            <h1 class="typing-text" data-text="Magic MCQ"></h1>
+            <h2 class="typing-text" data-text="পদার্থবিজ্ঞান ২য় পত্র"></h2>
+            <div class="header-row">
+                <h3
+                    class="typing-text"
+                    data-text="অধ্যায় নির্ধারণ করুন"
+                ></h3>
+                <div
+                    class="topic-selection"
+                    data-subject-name="Topic Selection"
+                    onclick="openQuiz('Topic Selection')"
+                >
+                    <span
+                        class="typing-text"
+                        data-text="Topic Selection"
+                    ></span>
+                </div>
+                <div
+                    class="edit"
+                    data-subject-name="Add & Modify"
+                    onclick="openEdit()"
+                >
+                    <span
+                        class="typing-text"
+                        data-text="Add & Modify"
+                    ></span>
+                </div>
+            </div>
+        </div>
+        <!-- Updated subject sections -->
+        <div class="subject" data-subject-name="প্রথম অধ্যায় : তাপ গতিবিদ্যা" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="প্রথম অধ্যায় : তাপ গতিবিদ্যা"></span>
+            <div class="arr" onclick="openQuiz('প্রথম অধ্যায় : তাপ গতিবিদ্যা')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'প্রথম অধ্যায় : তাপ গতিবিদ্যা')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'প্রথম অধ্যায় : তাপ গতিবিদ্যা')"></button>
+        </div>
+        <div class="content-container" id="content-container-প্রথম অধ্যায় : তাপ গতিবিদ্যা">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="দ্বিতীয় অধ্যায় : স্থির তড়িৎ" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="দ্বিতীয় অধ্যায় : স্থির তড়িৎ"></span>
+            <div class="arr" onclick="openQuiz('দ্বিতীয় অধ্যায় : স্থির তড়িৎ')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'দ্বিতীয় অধ্যায় : স্থির তড়িৎ')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'দ্বিতীয় অধ্যায় : স্থির তড়িৎ')"></button>
+        </div>
+        <div class="content-container" id="content-container-দ্বিতীয় অধ্যায় : স্থির তড়িৎ">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="তৃতীয় অধ্যায় : চল তড়িৎ" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="তৃতীয় অধ্যায় : চল তড়িৎ"></span>
+            <div class="arr" onclick="openQuiz('তৃতীয় অধ্যায় : চল তড়িৎ')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'তৃতীয় অধ্যায় : চল তড়িৎ')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'তৃতীয় অধ্যায় : চল তড়িৎ')"></button>
+        </div>
+        <div class="content-container" id="content-container-তৃতীয় অধ্যায় : চল তড়িৎ">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="সপ্তম অধ্যায় : ভৌত আলোকজীবন" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="সপ্তম অধ্যায় : ভৌত আলোকজীবন"></span>
+            <div class="arr" onclick="openQuiz('সপ্তম অধ্যায় : ভৌত আলোকজীবন')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'সপ্তম অধ্যায় : ভৌত আলোকজীবন')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'সপ্তম অধ্যায় : ভৌত আলোকজীবন')"></button>
+        </div>
+        <div class="content-container" id="content-container-সপ্তম অধ্যায় : ভৌত আলোকজীবন">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা "></span>
+            <div class="arr" onclick="openQuiz('অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা')"><div></div></div>
+            <button class="partial-button" data-text="(আংশিক)" onclick="toggleCollapse(this)"></button>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা ')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা ')"></button>
+        </div>
+        <div class="collapsible-content">
+             <div class="collapsible-box" class="typing-text" 
+                 data-text="● আধুনিক পদার্থবিজ্ঞানের ধারণা&#10;● জড় কাঠামো ও অজড় কাঠামো&#10;● মাইকেলসন মোরলে পরীক্ষা&#10;● আইনস্টাইনের আপেক্ষিকতা তত্ত্ব&#10;● গ্যালিলিয়ান রূপান্তর&#10;● লরেন্টজ রূপান্তর&#10;● আপেক্ষিকতা তত্ত্ব অনুসারে&#10;০ সময় সম্প্রসারণ&#10;০ দৈর্ঘ্য সংকোচণ&#10;০ ভর বৃদ্ধি&#10;● ভর শক্তির সর্ম্পক&#10;● মৌলিক বল&#10;● মহাকাশ ভ্রমণে আপেক্ষিকতা তত্ত্বের ব্যবহার&#10;● প্লাঙ্কের কালো বস্তুর বিকিরণ&#10;● এক্স রে&#10;● ফটোইলেকট্রিক ক্রিয়া"
+                 style="white-space: pre-wrap;"></div>
+        </div>
+        <div class="content-container" id="content-container-অষ্টম অধ্যায় : আধুনিক পদার্থবিজ্ঞানের সূচনা">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান"></span>
+            <div class="arr" onclick="openQuiz('নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান')"></button>
+        </div>
+        <div class="content-container" id="content-container-নবম অধ্যায় : পরমাণুর মডেল এবং নিউক্লিয়ার পদার্থবিজ্ঞান">
+            <!-- New box for each question will be added here -->
+        </div>
+        <div class="subject" data-subject-name="দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স" >
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স"></span>
+            <div class="arr" onclick="openQuiz('দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স')"><div></div></div>
+            <button class="a-button" data-text="(ক)" onclick="toggleSection(this, 'a', 'দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স')"></button>
+            <button class="b-button" data-text="(খ)" onclick="toggleSection(this, 'b', 'দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স')"></button>
+        </div>
+        <div class="content-container" id="content-container-দশম অধ্যায় : সেমিকন্ডাক্টর ও ইলেকট্রনিক্স">
+            <!-- New box for each question will be added here -->
+        </div>
+    </div>
+    <div
+        id="quiz-container"
+        style="position: fixed; z-index: 2100; display: none"
+    >
+        <iframe
+            id="quiz-iframe"
+            src="quiz.html"
+            style="
+                min-height: 100vh;
+                width: 100vw;
+                backdrop-filter: blur(2.5px);
+            "
+        ></iframe>
+    </div>
+    <div
+        id="Edit-container"
+        style="position: fixed; z-index: 2101; display: none"
+    >
+        <iframe
+            id="Edit-iframe"
+            src="Edit.html"
+            style="
+                min-height: 100vh;
+                width: 100vw;
+                backdrop-filter: blur(2.5px);
+            "
+        ></iframe>
+    </div>
+       <script src="abtyping (part).js"></script>
+</body>
+</html>

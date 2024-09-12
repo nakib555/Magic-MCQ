@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="bn">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="বাংলা ২য় পত্র.css" />
+        <title>বাংলা ২য় পত্র</title>
+    </head>
+    <body>
+        <a href="subject.html" class="floating-box">
+            <div class="arrow"></div>
+        </a>
+        <div class="container">
+            <div class="header">
+                <h1 class="typing-text" data-text="Magic MCQ"></h1>
+                <h2 class="typing-text" data-text="বাংলা ২য় পত্র"></h2>
+                <div class="header-row">
+                    <h3
+                        class="typing-text"
+                        data-text="অধ্যায় নির্ধারণ করুন"
+                    ></h3>
+                    <div
+                        class="edit"
+                        data-subject-name="Add & Modify"
+                        onclick="openEdit()"
+                    >
+                        <span
+                            class="typing-text"
+                            data-text="Add & Modify"
+                        ></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="subject" data-subject-name="প্রথম অধ্যায় : ব্যাকরণ">
+                <span class="subject-icon"
+                    ><img src="mcq exam.gif" alt="subject icon"
+                /></span>
+                <span
+                    class="typing-text"
+                    data-text="প্রথম অধ্যায় : ব্যাকরণ"
+                ></span>
+                <div class="arr" onclick="openQuiz('প্রথম অধ্যায় : ব্যাকরণ')">
+                    <div></div>
+                </div>
+                <button
+                    class="partial-button"
+                    data-text="(আংশিক)"
+                    onclick="toggleCollapse(this)"
+                ></button>
+            </div>
+            <div class="collapsible-content">
+                <div
+                    class="collapsible-box"
+                    class="typing-text"
+                    data-text="বাংলা উচ্চারণের নিয়ম:&#10;ক.অ-ধবনির উচ্চারণ, এ ধবনির উচ্চারণ, ব-ফলা, ম-ফলা, য (১)-ফলার উচ্চারণ&#10;খ.শব্দের উচ্চারণ&#10;বাংলা বানানের নিয়ম:&#10;ক.বাংলা একাডেমি প্রণীত প্রমিত বাংলা বানানের নিয়ম&#10;খ.শুদ্ধ বানান&#10;বাংলা ভাষার ব্যাকরণিক শব্দ শ্রেণি:&#10;ক.ব্যাকরণিক শব্দশ্রেণির শ্রেণিবিভাগ, বিশেষ্য, বিশেষণ, ক্রিয়াপদ ও আবেগের শ্রেণিবিভাগ&#10;খ.ব্যাকরণিক শব্দশ্রেণি নির্দেশকরণ&#10;বাংলা শব্দ গঠন: (উপসর্গ, সমাস)&#10;ক.উপসর্গের সংজ্ঞা, শ্রেণিবিভাগ ও প্রয়োজনীয়তা&#10;খ.ব্যাসবাক্যসহ সমাস নির্ণয়&#10;বাক্যতত্ত্ব:&#10;ক.বাক্য, সার্থক বাক্যের বৈশিষ্ট্যসমূহ, বাক্যের শ্রেণিবিভাগ&#10;খ.বাক্যান্তর বাংলা ভাষার অপপ্রয়োগ ও শুদ্ধ প্রয়োগ"
+                    style="white-space: pre-wrap"
+                ></div>
+            </div>
+        </div>
+        <div
+            id="quiz-container"
+            style="position: fixed; z-index: 2100; display: none"
+        >
+            <iframe
+                id="quiz-iframe"
+                src="quiz.html"
+                style="
+                    min-height: 100vh;
+                    width: 100vw;
+                    backdrop-filter: blur(2.5px);
+                "
+            ></iframe>
+        </div>
+        <div
+            id="Edit-container"
+            style="position: fixed; z-index: 2101; display: none"
+        >
+            <iframe
+                id="Edit-iframe"
+                src="Edit.html"
+                style="
+                    min-height: 100vh;
+                    width: 100vw;
+                    backdrop-filter: blur(2.5px);
+                "
+            ></iframe>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const typingElements =
+                    document.querySelectorAll(".typing-text");
+                typingElements.forEach((el) => {
+                    const text = el.getAttribute("data-text");
+                    el.textContent = ""; // Clear the text initially
+                    let speed = 30; // Default typing speed
+                    typeText(el, text, speed, () => {
+                        const button =
+                            el.parentElement.querySelector(".partial-button");
+                        if (button) {
+                            button.style.display = "inline-block";
+                            typeText(
+                                button,
+                                button.getAttribute("data-text"),
+                                speed,
+                            );
+                        }
+                    });
+                });
+
+                // Adjust container top margin based on header height
+                const header = document.querySelector(".header");
+                const container = document.querySelector(".container");
+                function adjustContainerMargin() {
+                    const headerHeight = header.offsetHeight;
+                    container.style.marginTop = headerHeight + "px";
+                }
+
+                adjustContainerMargin();
+                window.addEventListener("resize", adjustContainerMargin);
+            });
+
+            function typeText(element, text, speed, callback) {
+                let i = 0;
+                let typingInterval;
+
+                function typing() {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        typingInterval = setTimeout(typing, speed);
+                    } else {
+                        clearInterval(typingInterval);
+                        if (callback) callback(); // Call the callback when done
+                    }
+                }
+
+                typing();
+
+                return {
+                    clear: () => clearInterval(typingInterval),
+                };
+            }
+
+            function toggleCollapse(button) {
+                const collapsibleContent =
+                    button.parentElement.nextElementSibling;
+                const arrow = button.parentElement.querySelector(".arr div");
+
+                if (collapsibleContent && arrow) {
+                    const isActive =
+                        collapsibleContent.classList.toggle("active");
+                    arrow.classList.toggle("rotate");
+
+                    // Toggle the active class on the button
+                    button.classList.toggle("active", isActive);
+
+                    if (!isActive) {
+                        collapsibleContent
+                            .querySelectorAll(".collapsible-box")
+                            .forEach((box) => {
+                                const typingEffect = box.typingEffect;
+                                if (typingEffect) {
+                                    typingEffect.clear();
+                                }
+                            });
+                    } else {
+                        collapsibleContent
+                            .querySelectorAll(".collapsible-box")
+                            .forEach((box) => {
+                                const text = box.getAttribute("data-text");
+                                box.textContent = "";
+                                box.typingEffect = typeText(box, text, 4);
+                            });
+                    }
+                }
+            }
+
+            // Function to open quiz iframe
+            function openQuiz(subjectName) {
+                const quizIframe = document.getElementById("quiz-iframe");
+                quizIframe.contentWindow.postMessage(
+                    { subjectName: subjectName },
+                    "*",
+                );
+                const quizContainer = document.getElementById("quiz-container");
+                quizContainer.style.display = "block";
+            }
+            // Handle message from quiz iframe to close it
+            window.addEventListener("message", function (event) {
+                if (event.data === "closeQuiz") {
+                    const quizContainer =
+                        document.getElementById("quiz-container");
+                    quizContainer.style.display = "none";
+                }
+            });
+
+            // Function to open edit iframe
+            // Function to get all subject names
+            function getSubjectNames() {
+                const subjectNames = [];
+                const subjects = document.querySelectorAll(".subject");
+                subjects.forEach((subject) => {
+                    subjectNames.push(subject.dataset.subjectName);
+                });
+                return subjectNames;
+            }
+
+            // Call this function immediately to send the subject names and refresh Edit.html
+            window.onload = function () {
+                const subjectNames = getSubjectNames();
+                // Send subject names to Edit.html
+                const editIframe = document.getElementById("Edit-iframe");
+                editIframe.addEventListener("load", () => {
+                    editIframe.contentWindow.postMessage(
+                        { subjectNames: subjectNames },
+                        "*",
+                    );
+                });
+                window.postMessage({ subjectNames: subjectNames }, "*");
+
+                // Refresh Edit.html iframe
+                editIframe.src = "Edit.html";
+            };
+
+            function openEdit() {
+                document.getElementById("Edit-container").style.display =
+                    "block";
+                // Get all subject names
+                const subjectNames = [];
+                const subjects = document.querySelectorAll(".subject");
+                subjects.forEach((subject) => {
+                    subjectNames.push(subject.dataset.subjectName);
+                });
+
+                // Get the iframe element
+                const editIframe = document.getElementById("Edit-iframe");
+
+                // Add a load event listener to the iframe
+                editIframe.addEventListener("load", () => {
+                    // Send the subject names to Edit.html once the iframe has loaded
+                    editIframe.contentWindow.postMessage(
+                        { subjectNames: subjectNames },
+                        "*",
+                    );
+                });
+            }
+
+            function closeEdit() {
+                document.getElementById("Edit-container").style.display =
+                    "none";
+            }
+            window.addEventListener("message", function (event) {
+                if (event.data === "closeEdit") {
+                    closeEdit();
+                } else if (event.data.subjectName) {
+                    // Handle subject selection from Edit.html (if needed)
+                    const selectedSubject = event.data.subjectName;
+                    console.log("Selected Subject:", selectedSubject);
+                }
+            });
+        </script>
+    </body>
+</html>

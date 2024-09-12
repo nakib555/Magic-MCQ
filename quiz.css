@@ -1,0 +1,549 @@
+body {
+ 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  overflow: hidden; 
+  animation: fadeIn 1s;
+}
+
+html, body {
+  scroll-behavior: smooth;
+}
+
+* {
+   -webkit-tap-highlight-color: transparent;
+}
+
+
+
+.container {
+  background: #1f2847;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 20px;
+  text-align: center; 
+  animation: fadeIn 1s;
+  margin-top: 135px;
+}
+
+.heading {
+  font-size: 30px;
+  color: #fff;
+  margin-bottom: 20px;
+  animation: fadeInUp 1s;
+}
+
+label {
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: #fff;
+  animation: fadeInUp 1s;
+}
+
+input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  background: #fff;
+  color: #1f2847;
+  font-size: 14px;
+  text-align: center;
+  animation: fadeInUp 1s;
+}
+
+
+
+#limit{
+  margin-bottom: -10px;
+}
+
+.hide {
+  display: none;
+}
+
+#overlap-adjust{
+  position: relative;
+}
+
+.u-container {
+  text-align: center;
+  position: fixed;
+  top: 0;
+
+
+  padding: 2px;
+  background-color: #fff;
+  z-index: 1000;
+  
+  box-sizing: border-box;
+  position: relative;
+}
+
+
+
+.number-progress {
+  display: flex;
+  align-items: center;
+  /* Removed justify-content to allow progress to take full available space */
+
+
+   margin-top: 15px;
+  left: 25px; /* Align it to the left edge */
+  right: 25px;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  background-color: #fff; /* Add a background color to ensure visibility */
+  text-align: center;
+  animation: fadeInUp 1s;
+}
+.floating-close {
+	
+	background: #bde0c5;
+	height: 35px;
+	width: 35px;
+	border-radius: 50%;
+	transition: 0.4s ease;
+	cursor: pointer;
+	z-index: 1001;
+	text-decoration: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: gradientChange 1s linear infinite;
+}
+
+.close {
+	position: relative;
+	height: 12px;
+	width: 15px;
+}
+
+.close::before,
+.close::after {
+	content: "";
+	position: absolute;
+	height: 1.5px;
+	width: 100%;
+	background-color: #202020;
+	border-radius: 2.5px;
+	transition: 0.4s ease;
+}
+
+.close::before {
+	transform: rotate(45deg);
+	top: 50%;
+	left: 50%;
+	transform-origin: center;
+	translate: -50% -50%;
+	/* animation: closeBefore 1s ease-in-out infinite alternate; */
+}
+
+.close::after {
+	transform: rotate(135deg);
+	top: 50%;
+	left: 50%;
+	transform-origin: center;
+	translate: -50% -50%;
+	/* animation: closeAfter 1.5s ease-in-out infinite alternate; */
+}
+
+
+.number-container,
+.timer-container {
+  display: flex;
+  align-items: center;
+
+}
+
+.number-container {
+  position: fixed;
+  margin-right: 0px; 
+
+}
+
+.number {
+  color: #a2aace;
+  font-size: 25px;
+  font-weight: 500;
+  align-items: center;
+  margin-right: 15px;
+  display: flex;
+  gap: 6px;
+  animation: fadeInUp 1s;
+}
+
+.number .total {
+  color: #576081;
+  font-size: 20px;
+}
+
+/* Allow progress to take full width */
+.progress {
+  width: calc(100% - 100px); 
+  height: 16.5px;
+  background: transparent;
+  border-radius: 25px;
+  overflow: hidden;
+  border: 0.5px solid #3f4868;
+  transform: translateX(0%);
+  margin-bottom: 5px;
+  margin-right: -3.5px;
+
+
+
+}
+
+.progress-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 2.5px;
+  background: linear-gradient(to right, #ea517c, #b478f1);
+  transition: 1s linear;
+
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  font-size: 12px;
+  font-weight: 500;
+
+}
+
+.timer {
+  color: #414557;
+  font-size: 16.5px;
+  font-weight: 500;
+  animation: fadeInUp 1s;
+}
+
+
+.question {
+  color: #000;
+  font-size: 18px;
+  font-weight: 500;
+
+  z-index: 10; /* Ensure it stays on top of other elements */
+  background-color: #fff; /* Add a background color to ensure visibility */
+  text-align: left;
+  overflow-wrap: break-word;
+  margin-right: 22px;
+  margin-left: 0px;
+   animation: fadeInUp 1s;
+   
+  margin-top: 10px;
+
+}
+
+.question-wrapper,
+.answer-wrapper {
+
+
+  background-color: #fff; /* Add a background color to ensure visibility */
+  text-align: left;
+  margin-bottom: 20px; /* Add margin to the bottom of the question and answer wrappers */
+  animation: fadeInUp 1s;
+}
+
+.answer-wrapper .answer {
+  display: flex;
+  align-items: center;
+  background-color: rgba(173, 216, 238, 0.5);
+  padding: 10px;
+  top: 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #000;
+  border: 0.5px solid #cfcfdd;
+  position: relative;
+  cursor: pointer;
+  padding-right: 35px;
+
+
+}
+
+.answer .checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #3f4868;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.answer .checkbox i {
+  color: #fff;
+  font-size: 10px;
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.answer:hover:not(.checked) .checkbox,
+.answer.selected .checkbox {
+  background-color: #ffffff;
+  border-color: #ffffff;
+}
+
+.answer.selected .checkbox i {
+  opacity: 1;
+}
+
+.answer.correct {
+  background-color: #90EE90;
+  border-color: #90EE90;
+}
+
+.answer.wrong {
+  background-color: #cd7774;
+  border-color: #cd7774;
+}
+
+.question-wrapper,
+.answer-wrapper {
+   /* This makes it fixed */
+  /* This makes it fixed */
+
+  background-color: #fff; /* Add a background color to ensure visibility */
+  text-align: left;
+}
+
+.quiz-heading {
+  /* Customize as needed */
+  color: #000; /* Or any color you prefer */
+  font-size: 25px; 
+  margin-top: 25px; /* Remove margin-top */ 
+
+  text-align: center;
+  margin: auto;
+  text-shadow: 
+  -1px -1px 0 #ff0000, 
+  1px -1px 0 #ea517c,
+  -1px 1px 0 #a8c2a8,
+  1px 1px 0 #b478f1;
+  text-align: center;
+  top: 20px;
+  left: 1px;/* Align it to the left edge */
+  right: 2px;
+  width: 90%;
+  padding: 2px;
+  background-color: #fff;
+  z-index: 1000;
+  box-sizing: border-box;
+  animation: fadeInUp 1s;
+}
+
+.quiz {
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  text-decoration: none;
+  width: 100%;
+  max-width: auto;
+  margin: auto;
+  padding: 20px;
+  background-color: #fff;
+  
+}
+
+.btn {
+  width: 100%;
+  height: 45px;
+  background: #ea517c;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s linear;
+
+}
+
+.btn:hover {
+  background: #8bb1d0;
+}
+.btn:disabled {
+  background: #576081;
+  cursor: not-allowed;
+}
+
+.previous {
+  animation: fadeInUp 1s;
+ background: #ea517c;
+  border: 0.5px solid #868698;
+  color: #fff;
+}
+
+.stop {
+  animation: fadeInUp 1s;
+  background: #ea517c;
+  border: 0.5px solid #ff0000;
+  color: #fff;
+}
+
+.next {
+  animation: fadeInUp 1s;
+ background: #ea517c;
+  border: 0.5px solid #868698;
+  color: #fff;
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: space-around;
+  position: fixed;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+}
+
+.button-wrapper .btn {
+  width: 30%;
+}
+
+.end-screen .score {
+  color: #fff;
+  font-size: 25px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  animation: fadeInUp 1s;
+}
+
+.end-screen .score .score-text {
+  color: #a2aace;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 120px;
+  animation: fadeInUp 1s;
+}
+
+.time-limit,
+.question-limit {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  text-align: center; 
+  animation: fadeInUp 1s;
+}
+
+.time-limit label,
+.question-limit label {
+  margin-bottom: 5px;
+  animation: fadeInUp 1s;
+}
+
+.time-limit input,
+.question-limit input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.time-limit span,
+.answer-status {
+  color: #fff;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.answer-status {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 30px;
+  animation: fadeInUp 1s;
+  
+}
+
+.answer.disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Style for the options container */
+.options {
+  display: flex;
+  justify-content: space-between; 
+  margin-bottom: 30px;
+  animation: fadeInUp 1s;
+}
+
+/* Style for each option */
+.options > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 45%; 
+  animation: fadeInUp 1s;
+}
+
+.options label,
+.options input {
+  margin-bottom: 10px;
+  animation: fadeInUp 1s;
+}
+
+.options input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.options input:focus {
+  outline: none;
+  border-color: #0c80ef;
+}
+
+/* Style for the error message */
+.error-message {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+  margin-top: -40px;
+  margin-bottom: 20px;
+  animation: fadeInUp 1s;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

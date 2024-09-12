@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="উচ্চতর গণিত ১ম পত্র.css">
+    <title>উচ্চতর গণিত ১ম পত্র</title>
+</head>
+<body>
+<a href="subject.html" class="floating-box">
+    <div class="arrow"></div>
+</a>
+<div class="container">
+    <div class="header" id="header" >
+        <h1 class="typing-text" data-text="Magic MCQ"></h1>
+        <h2 class="typing-text" data-text="উচ্চতর গণিত ১ম পত্র"></h2>
+    <div class="header-row">
+            <h3
+                class="typing-text"
+                data-text="অধ্যায় নির্ধারণ করুন"
+            ></h3>
+            <div
+                class="topic-selection"
+                data-subject-name="Topic Selection"
+                onclick="openQuiz('Topic Selection')"
+            >
+                <span
+                    class="typing-text"
+                    data-text="Topic Selection"
+                ></span>
+            </div>
+            <div
+                class="edit"
+                data-subject-name="Add & Modify"
+                onclick="openEdit()"
+            >
+                <span
+                    class="typing-text"
+                    data-text="Add & Modify"
+                ></span>
+            </div>
+        </div>
+    </div>
+    <div class="subject" data-subject-name="প্রথম অধ্যায় : ম্যাট্রিক্স নির্ণায়ক">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="প্রথম অধ্যায় : ম্যাট্রিক্স নির্ণায়ক"></span>
+        <div class="arr" onclick="openQuiz('প্রথম অধ্যায় : ম্যাট্রিক্স নির্ণায়ক')"><div></div></div>
+    </div>
+    <div class="subject" data-subject-name="তৃতীয় অধ্যায় : সরলরেখা">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="তৃতীয় অধ্যায় : সরলরেখা"></span>
+        <div class="arr" onclick="openQuiz('তৃতীয় অধ্যায় : সরলরেখা')"><div></div></div>
+    </div>
+    <div class="subject" data-subject-name="চতুর্থ অধ্যায় : বৃত্ত">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="চতুর্থ অধ্যায় : বৃত্ত"></span>
+        <div class="arr" onclick="openQuiz('চতুর্থ অধ্যায় : বৃত্ত')"><div></div></div>
+    </div>
+    <div class="subject" data-subject-name="সপ্তম অধ্যায় : সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="সপ্তম অধ্যায় : সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত"></span>
+        <div class="arr" onclick="openQuiz('সপ্তম অধ্যায় : সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত')"><div></div></div>
+    </div>
+    <div class="subject" data-subject-name="নবম অধ্যায় : অন্তরীকরণ">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="নবম অধ্যায় : অন্তরীকরণ"></span>
+        <div class="arr" onclick="openQuiz('নবম অধ্যায় : অন্তরীকরণ')"><div></div></div>
+    </div>
+    <div class="subject" data-subject-name="দশম অধ্যায় : যোগজীকরণ">
+        <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+        <span class="typing-text" data-text="দশম অধ্যায় : যোগজীকরণ"></span>
+        <div class="arr" onclick="openQuiz('দশম অধ্যায় : যোগজীকরণ')"><div></div></div>
+    </div>
+</div>
+    <div
+        id="quiz-container"
+        style="position: fixed; z-index: 2100; display: none"
+    >
+        <iframe
+            id="quiz-iframe"
+            src="quiz.html"
+            style="
+                min-height: 100vh;
+                width: 100vw;
+                backdrop-filter: blur(2.5px);
+            "
+        ></iframe>
+    </div>
+    <div
+        id="Edit-container"
+        style="position: fixed; z-index: 2101; display: none"
+    >
+        <iframe
+            id="Edit-iframe"
+            src="Edit.html"
+            style="
+                min-height: 100vh;
+                width: 100vw;
+                backdrop-filter: blur(2.5px);
+            "
+        ></iframe>
+    </div>
+    <script src="abtyping (part).js"></script>
+    </body>
+    </html>
