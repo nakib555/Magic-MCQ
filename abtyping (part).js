@@ -323,34 +323,25 @@ function getSubjectNames() {
     return subjectNames;
 }
 
-// Call this function immediately to send the subject names and refresh Edit.html
-window.onload = function() {
-    const subjectNames = getSubjectNames();
-    // Send subject names to Edit.html
-    const editIframe = document.getElementById('Edit-iframe');
-    editIframe.addEventListener('load', () => {
-        editIframe.contentWindow.postMessage({ subjectNames: subjectNames }, '*');
-    });
-    window.postMessage({ subjectNames: subjectNames }, '*');
 
-    // Refresh Edit.html iframe
-    editIframe.src = 'Edit.html'; 
-};
 
 function openEdit() {
-    document.getElementById('Edit-container').style.display = 'block';
-    // Get all subject names
-    const subjectNames = getSubjectNames();
+  const editContainer = document.getElementById('Edit-container');
+  const editIframe = document.getElementById('Edit-iframe');
 
-    // Get the iframe element
-    const editIframe = document.getElementById('Edit-iframe');
-
-    // Add a load event listener to the iframe
-    editIframe.addEventListener('load', () => {
-        // Send the subject names to Edit.html once the iframe has loaded
-        editIframe.contentWindow.postMessage({ subjectNames: subjectNames }, '*'); 
-    });
+  if (editContainer && editIframe) {
+      editContainer.style.display = 'block';
+      const subjectNames = getSubjectNames();
+      try {
+          editIframe.contentWindow.postMessage({ subjectNames }, '*');
+      } catch (error) {
+          console.error('Message sending failed:', error);
+      }
+  } else {
+      console.error('Edit-container or Edit-iframe not found.');
+  }
 }
+
 
 function closeEdit() {
     document.getElementById('Edit-container').style.display = 'none';
@@ -369,23 +360,36 @@ window.addEventListener('message', function (event) {
 
 // Initialize Server-Sent Events
 function initializeSSE() {
-  const eventSource = new EventSource('http://localhost:3001/sse/ab.json');
+  async function attemptConnection(urlIndex = 0) {
+    if (urlIndex >= urls.length) {
+      console.warn('All SSE URLs failed. Retrying in 5 seconds...');
+      // Retry from the first URL after a delay
+      setTimeout(() => attemptConnection(0), 5000);
+      return;
+    }
 
-  eventSource.onmessage = function(event) {
-    const update = JSON.parse(event.data);
-    handleUpdate(update);
-  };
+    const url = `${urls[urlIndex]}sse/ab.json`;
+    const eventSource = new EventSource(url);
 
-  eventSource.onerror = function(error) {
-    console.error('EventSource failed:', error);
-    setTimeout(initializeSSE, 5000); // Retry connection after 5 seconds
-  };
+    eventSource.onmessage = function(event) {
+      const update = JSON.parse(event.data);
+      handleUpdate(update);
+    };
 
-  window.addEventListener('beforeunload', () => {
-    eventSource.close();
-  });
+    eventSource.onerror = function(error) {
+      console.error(`EventSource failed for ${url}:`, error);
+      eventSource.close();
+      // Retry with the next URL after 5 seconds
+      setTimeout(() => attemptConnection(urlIndex + 1), 5000);
+    };
+
+    window.addEventListener('beforeunload', () => {
+      eventSource.close();
+    });
+  }
+
+  attemptConnection(); // Start with the first URL
 }
-
 // Function to handle updates from the server
 function handleUpdate(update) {
   const { type, subject, section, questionIndex, question } = update;
@@ -466,31 +470,56 @@ const forceReflow = () => document.body.offsetHeight;
 
 // Load the JSON data from ab.json
 let questionData = null;
+const urls = [
+  'http://localhost:5500/',
+  'http://localhost:3001/',
+  'http://localhost:8080/'
+];
+
 async function loadQuestionData() {
-  try {
-    const response = await fetch('http://localhost:3001/ab.json');
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching or parsing data:", error);
-    return null;
+  for (const baseUrl of urls) {
+    try {
+      const response = await fetch(`${baseUrl}ab.json`);
+      if (!response.ok) {
+        console.warn(`Failed to fetch from ${baseUrl}ab.json. Status: ${response.status}`);
+        continue; // Try the next URL
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching or parsing data from ${baseUrl}ab.json:`, error);
+    }
   }
+
+  // If all URLs fail, display an error message and return null
+  console.error("Failed to fetch data from all provided URLs.");
+  return null;
 }
+
 
 // Load initial data
 async function loadQuestionData() {
-  try {
-    const response = await fetch('http://localhost:3001/ab.json');
-    const data = await response.json();
-    questionData = data;
-    initializeSSE();
-  } catch (error) {
-    console.error("Error fetching or parsing data:", error);
-    const errorMessage = document.getElementById('error-message');
-    if (errorMessage) {
-      errorMessage.textContent = "Error loading questions. Please refresh the page.";
-      errorMessage.classList.remove("hide");
+  for (const baseUrl of urls) {
+    try {
+      const response = await fetch(`${baseUrl}ab.json`);
+      if (!response.ok) {
+        console.warn(`Failed to fetch from ${baseUrl}ab.json. Status: ${response.status}`);
+        continue; // Try the next URL
+      }
+      const data = await response.json();
+      questionData = data;
+      initializeSSE();
+      return; // Exit function after successful fetch
+    } catch (error) {
+      console.error(`Error fetching or parsing data from ${baseUrl}ab.json:`, error);
     }
+  }
+
+  // If all URLs fail, update the UI to show an error message
+  const errorMessage = document.getElementById('error-message');
+  if (errorMessage) {
+    errorMessage.textContent = "Error loading questions. Please refresh the page.";
+    errorMessage.classList.remove("hide");
   }
 }
 

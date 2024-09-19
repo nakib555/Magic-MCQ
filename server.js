@@ -3,15 +3,18 @@ const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 const path = require('path');
 const cors = require('cors');
-const multer = require('multer'); // Import multer for handling file uploads
+const multer = require('multer');
 const EventEmitter = require('events');
+
 const app = express();
-const port = 3001;
+const port1 = 3001; // First port
+const port2 = 8080; // Second port
+const port3 = 5500; // Third port
 
 // Enable CORS for all origins
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true })); // For form data
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
@@ -20,6 +23,9 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Serve static files
+app.use(express.static(path.join(__dirname, '/')));
+
 // Create an EventEmitter for SSE
 const abChangeEmitter = new EventEmitter();
 
@@ -27,10 +33,10 @@ const abChangeEmitter = new EventEmitter();
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const imagePath = path.join(__dirname, 'image');
-    cb(null, imagePath); // Save in 'image' folder
+    cb(null, imagePath);
   },
   filename: (_req, file, cb) => {
-    cb(null, file.originalname); // Use original file name
+    cb(null, file.originalname);
   }
 });
 
@@ -65,7 +71,7 @@ async function deleteImageFile(imagePath) {
   if (validImageRegex.test(imagePath)) {
     try {
       const fullImagePath = path.join(__dirname, imagePath);
-      await fs.unlink(fullImagePath); // Delete the file from the filesystem
+      await fs.unlink(fullImagePath);
       console.log(`Image deleted: ${imagePath}`);
     } catch (err) {
       console.error(`Error deleting image: ${imagePath}`, err);
@@ -75,7 +81,41 @@ async function deleteImageFile(imagePath) {
   }
 }
 
-// SSE route for ab.json changes
+// Helper function to find image links in text
+function findImageLinks(text) {
+  return text ? text.match(/\(image\/[^)]+\)/g) || [] : [];
+}
+
+// Helper function to delete unused images
+async function deleteUnusedImages(oldImages, newImages) {
+  const imagesToDelete = oldImages.filter(img => !newImages.includes(img));
+  for (const img of imagesToDelete) {
+    const imagePath = img.replace(/[()]/g, ''); // Remove parentheses
+    await deleteImageFile(imagePath);
+  }
+}
+
+const normalizeLineBreaks = (text) => text.replace(/(\r\n|\r|\\n)/g, '\n');
+
+app.use(express.json()); // To parse JSON request bodies
+
+app.post('/start-server', (req, res) => {
+  console.log('Server start request received!');
+  res.send('Server starting...'); 
+});
+
+// POST route for handling image uploads
+app.post('/upload', upload.array('images[]'), (req, res) => {
+  try {
+    const fileNames = req.files.map(file => file.filename);
+    res.json({ message: 'Images uploaded successfully', files: fileNames });
+  } catch (error) {
+    console.error('Error during image upload:', error);
+    res.status(500).json({ error: 'Error uploading images' });
+  }
+});
+
+// SSE route for ab.json changes for all ports
 app.get('/sse/ab.json', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Connection', 'keep-alive');
@@ -84,6 +124,7 @@ app.get('/sse/ab.json', (req, res) => {
   const listener = (data) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
+
   abChangeEmitter.on('update', listener);
   
   req.on('close', () => {
@@ -91,259 +132,230 @@ app.get('/sse/ab.json', (req, res) => {
   });
 });
 
-// GET route for questions.json
-app.get('/questions.json', async (req, res) => {
+// Merged routes for questions.json and ab.json
+const endpoints = ['questions.json', 'ab.json'];
+
+endpoints.forEach(endpoint => {
+  // GET route
+  app.get(`/${endpoint}`, async (_req, res) => {
+    try {
+      const data = await readJsonFile(endpoint);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: `Error reading ${endpoint}` });
+    }
+  });
+
+  // POST route
+app.post(`/${endpoint}`, upload.array('images[]'), async (req, res) => {
   try {
-    const data = await readJsonFile('questions.json');
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Error reading questions.json' });
-  }
-});
+    const data = await readJsonFile(endpoint);
+    let newData;
 
-// GET route for ab.json
-app.get('/ab.json', async (req, res) => {
-  try {
-    const data = await readJsonFile('ab.json');
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Error reading ab.json' });
-  }
-});
+    if (endpoint === 'questions.json') {
+      let { section, question, options, correctAnswer } = req.body;
+      question = normalizeLineBreaks(question);
+      correctAnswer = normalizeLineBreaks(correctAnswer);
 
-// POST route for questions.json (with multiple image uploads)
-app.post('/questions.json', upload.array('images[]'), async (req, res) => {
-  try {
-    const data = await readJsonFile('questions.json');
-    const { section, question, options, correctAnswer } = req.body;
+      // Temporarily replace line breaks in options with a placeholder
+      const placeholder = '__LINE_BREAK__';
+      const optionsWithoutLineBreaks = options.replace(/\r?\n/g, placeholder);
 
-    const parsedOptions = Array.isArray(options) ? options : JSON.parse(options);
+      let parsedOptions;
+      try {
+        parsedOptions = Array.isArray(options) ? options : JSON.parse(optionsWithoutLineBreaks);
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid options format' });
+      }
 
-    const sectionIndex = data.sections.findIndex(s => s.section === section);
-    if (sectionIndex === -1) {
-      data.sections.push({ section, questions: [] });
+      // Restore line breaks in parsedOptions
+      parsedOptions = parsedOptions.map(option => option.replace(new RegExp(placeholder, 'g'), '\n'));
+
+      const sectionIndex = data.sections.findIndex(s => s.section === section);
+      if (sectionIndex === -1) {
+        data.sections.push({ section, questions: [] });
+      }
+
+      newData = {
+        question,
+        options: parsedOptions,
+        correctAnswer,
+        answered: false,
+        selectedAnswer: null
+      };
+
+      data.sections[sectionIndex].questions.push(newData);
+    } else if (endpoint === 'ab.json') {
+      let { subject, section, question, explanation } = req.body;
+      question = normalizeLineBreaks(question);
+      explanation = normalizeLineBreaks(explanation);
+
+      if (!data[subject]) {
+        data[subject] = { a: [], b: [] };
+      }
+
+      newData = { question, explanation };
+      data[subject][section].push(newData);
+
+      abChangeEmitter.emit('update', { type: 'add', subject, section, question: newData });
     }
 
-    const newQuestion = {
-      question,
-      options: parsedOptions,
-      correctAnswer,
-      answered: false,
-      selectedAnswer: null
-    };
-
-    data.sections[sectionIndex].questions.push(newQuestion);
-
-    await writeJsonFile('questions.json', data);
+    await writeJsonFile(endpoint, data);
     res.json({ message: 'Question added successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Error adding question to questions.json' });
-  }
-});
-
-// POST route for ab.json (with multiple image uploads)
-app.post('/ab.json', upload.array('images[]'), async (req, res) => {
-  try {
-    const data = await readJsonFile('ab.json');
-    const { subject, section, question, explanation } = req.body;
-
-    if (!data[subject]) {
-      data[subject] = { a: [], b: [] };
-    }
-
-    const newQuestion = {
-      question,
-      explanation
-    };
-
-    data[subject][section].push(newQuestion);
-
-    await writeJsonFile('ab.json', data);
-    abChangeEmitter.emit('update', { type: 'add', subject, section, question: newQuestion });
-    res.json({ message: 'Question added successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error adding question to ab.json' });
-  }
-});
-
-// PUT route for questions.json
-app.put('/questions.json', async (req, res) => {
-  try {
-    const data = await readJsonFile('questions.json');
-    const { oldQuestion, oldOptions, oldAnswer, newQuestion, newOptions, newAnswer, section } = req.body;
-
-    const parsedOldOptions = Array.isArray(oldOptions) ? oldOptions : JSON.parse(oldOptions);
-    const parsedNewOptions = Array.isArray(newOptions) ? newOptions : JSON.parse(newOptions);
-
-    const sectionIndex = data.sections.findIndex(s => s.section === section);
-    if (sectionIndex === -1) {
-      return res.status(404).json({ error: 'Section not found' });
-    }
-
-    const questionIndex = data.sections[sectionIndex].questions.findIndex(q =>
-      q.question === oldQuestion &&
-      JSON.stringify(q.options) === JSON.stringify(parsedOldOptions) &&
-      q.correctAnswer === oldAnswer
-    );
-
-    if (questionIndex === -1) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    data.sections[sectionIndex].questions[questionIndex] = {
-      question: newQuestion,
-      options: parsedNewOptions,
-      correctAnswer: newAnswer,
-      answered: false,
-      selectedAnswer: null
-    };
-
-    await writeJsonFile('questions.json', data);
-    res.json({ message: 'Question updated successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating question in questions.json' });
-  }
-});
-
-// PUT route for ab.json
-app.put('/ab.json', async (req, res) => {
-  try {
-    const { subject, section, newQuestion, newExplanation, questionIndex } = req.body;
-    const data = await readJsonFile('ab.json');
-
-    if (!data[subject] || !data[subject][section]) {
-      return res.status(404).json({ error: 'Subject or section not found' });
-    }
-
-    if (questionIndex < 0 || questionIndex >= data[subject][section].length) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    data[subject][section][questionIndex] = {
-      question: newQuestion,
-      explanation: newExplanation
-    };
-
-    await writeJsonFile('ab.json', data);
-    abChangeEmitter.emit('update', { type: 'modify', subject, section, questionIndex, question: data[subject][section][questionIndex] });
-    res.json({ message: 'Question updated successfully', updatedData: data[subject][section][questionIndex] });
-  } catch (error) {
-    console.error('Error updating question in ab.json:', error);
-    res.status(500).json({ error: 'Error updating question in ab.json' });
-  }
-});
-
-// DELETE route for questions.json (supports multiple images in question, options, and answer)
-app.delete('/questions.json', async (req, res) => {
-  try {
-    const { question, section } = req.body;
-
-    // Read the questions.json file
-    const data = await readJsonFile('questions.json');
-
-    // Find the section index
-    const sectionIndex = data.sections.findIndex(s => s.section === section);
-    if (sectionIndex === -1) {
-      return res.status(404).json({ error: 'Section not found' });
-    }
-
-    // Find the question index
-    const questionIndex = data.sections[sectionIndex].questions.findIndex(q => q.question === question);
-    if (questionIndex === -1) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    // Get the question data and look for images
-    const questionData = data.sections[sectionIndex].questions[questionIndex];
-    const { question: questionText, options, correctAnswer } = questionData;
-
-    // Find all image references in question text, options, and answer
-    const findImages = text => text ? text.match(/\((image\/[^)]+)\)/g) : [];
-    const imageLinks = [
-      ...(findImages(questionText) || []),
-      ...(Array.isArray(options) ? options.flatMap(findImages) : []),
-      ...(findImages(correctAnswer) || [])
-    ].filter(link => link); // Filter out any null values
-
-    // Delete image files if any images are found
-    if (imageLinks.length > 0) {
-      await Promise.all(imageLinks.map(async (link) => {
-        const imagePath = link.replace(/[()]/g, ''); // Remove parentheses
-        await deleteImageFile(imagePath);
-      }));
-    }
-
-    // Delete the question from the array
-    data.sections[sectionIndex].questions.splice(questionIndex, 1);
-
-    // Write the updated data back to the questions.json file
-    await writeJsonFile('questions.json', data);
-
-    res.json({ message: 'Question and associated images deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting question:', error);
-    res.status(500).json({ error: 'Error deleting question from questions.json' });
+    console.error(`Error adding question to ${endpoint}:`, error.message);
+    res.status(500).json({ error: `Error adding question to ${endpoint}` });
   }
 });
 
 
-
-// DELETE route for ab.json (supports multiple images in question and explanation)
-app.delete('/ab.json', async (req, res) => {
-  try {
-    const { subject, section, questionIndex } = req.body;
-
-    // Read the ab.json file
-    const data = await readJsonFile('ab.json');
-
-    // Check if subject and section exist
-    if (!data[subject] || !data[subject][section]) {
-      return res.status(404).json({ error: 'Subject or section not found' });
+  // PUT route
+  app.put(`/${endpoint}`, async (req, res) => {
+    try {
+      const data = await readJsonFile(endpoint);
+      const isQuestionsFile = endpoint === 'questions.json';
+      const body = req.body;
+  
+      const getSectionIndex = (sections, section) => sections.findIndex(s => s.section === section);
+      const validateIndex = (index, array) => index >= 0 && index < array.length;
+  
+      const { section, questionIndex } = body;
+      let sectionData, oldQuestion, oldImageLinks = [], newImageLinks = [];
+  
+      if (isQuestionsFile) {
+        const { newQuestion, newOptions, newAnswer } = body;
+        const parsedOptions = Array.isArray(newOptions) ? newOptions : JSON.parse(newOptions);
+  
+        const sectionIndex = getSectionIndex(data.sections, section);
+        if (sectionIndex === -1 || !validateIndex(questionIndex, data.sections[sectionIndex].questions)) {
+          return res.status(404).json({ error: 'Invalid section or question index' });
+        }
+  
+        sectionData = data.sections[sectionIndex].questions[questionIndex];
+        oldImageLinks = [
+          ...findImageLinks(sectionData.question),
+          ...sectionData.options.flatMap(findImageLinks),
+          ...findImageLinks(sectionData.correctAnswer)
+        ];
+        newImageLinks = [
+          ...findImageLinks(newQuestion),
+          ...parsedOptions.flatMap(findImageLinks),
+          ...findImageLinks(newAnswer)
+        ];
+  
+        sectionData = { question: newQuestion, options: parsedOptions, correctAnswer: newAnswer, answered: false, selectedAnswer: null };
+        data.sections[sectionIndex].questions[questionIndex] = sectionData;
+      } else {
+        const { subject, newQuestion, newExplanation } = body;
+  
+        if (!data[subject] || !data[subject][section] || !validateIndex(questionIndex, data[subject][section])) {
+          return res.status(404).json({ error: 'Invalid subject, section, or question index' });
+        }
+  
+        sectionData = data[subject][section][questionIndex];
+        oldImageLinks = [
+          ...findImageLinks(sectionData.question),
+          ...findImageLinks(sectionData.explanation)
+        ];
+        newImageLinks = [
+          ...findImageLinks(newQuestion),
+          ...findImageLinks(newExplanation)
+        ];
+  
+        sectionData = { question: newQuestion, explanation: newExplanation };
+        data[subject][section][questionIndex] = sectionData;
+  
+        abChangeEmitter.emit('update', { type: 'modify', subject, section, questionIndex, question: sectionData });
+      }
+  
+      await deleteUnusedImages(oldImageLinks, newImageLinks);
+      await writeJsonFile(endpoint, data);
+      res.json({ message: 'Question updated successfully' });
+    } catch (error) {
+      console.error(`Error updating question in ${endpoint}:`, error);
+      res.status(500).json({ error: `Error updating question in ${endpoint}` });
     }
+  });
+  
 
-    // Check if the question index is valid
-    if (questionIndex < 0 || questionIndex >= data[subject][section].length) {
-      return res.status(404).json({ error: 'Question not found' });
+  // DELETE route
+  app.delete(`/${endpoint}`, async (req, res) => {
+    try {
+      const data = await readJsonFile(endpoint);
+
+      if (endpoint === 'questions.json') {
+        const { section, questionIndex } = req.body;
+
+        const sectionIndex = data.sections.findIndex(s => s.section === section);
+        if (sectionIndex === -1) {
+          return res.status(404).json({ error: 'Section not found' });
+        }
+
+        if (questionIndex < 0 || questionIndex >= data.sections[sectionIndex].questions.length) {
+          return res.status(404).json({ error: 'Question not found by index' });
+        }
+
+        const questionData = data.sections[sectionIndex].questions[questionIndex];
+        const { question, options, correctAnswer } = questionData;
+
+        const imageLinks = [
+          ...findImageLinks(question),
+          ...options.flatMap(option => findImageLinks(option)),
+          ...findImageLinks(correctAnswer)
+        ];
+
+        await Promise.all(imageLinks.map(async (link) => {
+          const imagePath = link.replace(/[()]/g, '');
+          await deleteImageFile(imagePath);
+        }));
+
+        data.sections[sectionIndex].questions.splice(questionIndex, 1);
+      } else if (endpoint === 'ab.json') {
+        const { subject, section, questionIndex } = req.body;
+
+        if (!data[subject] || !data[subject][section]) {
+          return res.status(404).json({ error: 'Subject or section not found' });
+        }
+
+        if (questionIndex < 0 || questionIndex >= data[subject][section].length) {
+          return res.status(404).json({ error: 'Question not found' });
+        }
+
+        const questionData = data[subject][section][questionIndex];
+        const { question: questionText, explanation } = questionData;
+
+        const imageLinks = [
+          ...findImageLinks(questionText),
+          ...findImageLinks(explanation)
+        ];
+
+        await Promise.all(imageLinks.map(async (link) => {
+          const imagePath = link.replace(/[()]/g, '');
+          await deleteImageFile(imagePath);
+        }));
+
+        const deletedQuestion = data[subject][section].splice(questionIndex, 1)[0];
+        abChangeEmitter.emit('update', { type: 'delete', subject, section, questionIndex, question: deletedQuestion });
+      }
+
+      await writeJsonFile(endpoint, data);
+      res.json({ message: 'Question and associated images deleted successfully' });
+    } catch (error) {
+      console.error(`Error deleting question from ${endpoint}:`, error);
+      res.status(500).json({ error: `Error deleting question from ${endpoint}` });
     }
-
-    // Get the question data and look for images
-    const questionData = data[subject][section][questionIndex];
-    const { question: questionText, explanation } = questionData;
-
-    // Find all image references in question text and explanation
-    const findImages = text => text ? text.match(/\((image\/[^)]+)\)/g) : [];
-    const imageLinks = [
-      ...(findImages(questionText) || []),
-      ...(findImages(explanation) || [])
-    ].filter(link => link); // Filter out any null values
-
-    // Delete image files if any images are found
-    if (imageLinks.length > 0) {
-      await Promise.all(imageLinks.map(async (link) => {
-        const imagePath = link.replace(/[()]/g, ''); // Remove parentheses
-        await deleteImageFile(imagePath);
-      }));
-    }
-
-    // Delete the question from the array
-    const deletedQuestion = data[subject][section].splice(questionIndex, 1)[0];
-
-    // Write the updated data back to the ab.json file
-    await writeJsonFile('ab.json', data);
-
-    // Emit the SSE event for question deletion
-    abChangeEmitter.emit('update', { type: 'delete', subject, section, questionIndex, question: deletedQuestion });
-
-    res.json({ message: 'Question and associated images deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting question from ab.json:', error);
-    res.status(500).json({ error: 'Error deleting question from ab.json' });
-  }
+  });
 });
 
+// Start servers on all ports
+app.listen(port1, () => {
+  console.log(`Server running on port ${port1}`);
+});
 
+app.listen(port2, () => {
+  console.log(`Server running on port ${port2}`);
+});
 
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(port3, () => {
+  console.log(`Server running on port ${port3}`);
 });

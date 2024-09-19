@@ -200,28 +200,35 @@
 	animation: fadeInUp 1s;
   }
   
-  .Modify,
-  .btn {
-	width: 30%;
-	height: 30px;
-	background: #ea517c;
-	border: none;
-	border-radius: 10px;
-	color: #fff;
-	font-size: 12.5px;
-	font-weight: 500;
+.Modify, .btn {
+	width: 29%;
+	height: 35px; /* Slightly increased height for better feel */
+	padding: 3px 12px; /* More balanced padding */
+	border-radius: 12px; /* Smoother rounded corners */
+	font-size: 12.5px; /* Slightly larger text */
 	cursor: pointer;
-	transition: 0.3s linear;
-  }
+	color: #fff;
+	background: linear-gradient(45deg, #ea517c, #b478f1);
+	border: none;
+	font-weight: 500;
+	transition: all 0.3s ease;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Adds depth with a shadow */
+}
+
+.Modify:hover, .btn:hover {
+	background: linear-gradient(45deg, #ff7a9c, #a66bef); /* Brighter on hover */
+	transform: scale(1.05); /* Slightly enlarges button on hover */
+	box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+}
+
+.Modify:active, .btn:active {
+	transform: scale(0.98); /* Shrinks slightly when clicked */
+	box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15); /* Softer shadow on click */
+}
+
+
   
-  .Modify {
-	min-height: 30px;
-	max-height: auto;
-  }
-  
-  .btn:hover {
-	background: #71c2e5;
-  }
+ 
   
   .wrap-input-17 * {
 	box-sizing: border-box;
@@ -293,7 +300,7 @@
 	display: block;
 	padding: 5px;
 	overflow-y: auto;
-	max-height: 380px;
+	max-height: 446px;
 	}
   /* Custom scrollbar for WebKit browsers */
 .search-results::-webkit-scrollbar {
@@ -333,16 +340,19 @@
   
   .search-result button {
 	margin-top: 0px;
-	padding: 5px 17.5px;
+
 	border-radius: 5px;
 	cursor: pointer;
   }
-  
+
+
+
   .edit-button {
 	background-color: #008CBA;
 	border: none;
 	color: white;
 	font-size: 16px;
+	  
   }
   
   .save-button {
@@ -351,8 +361,15 @@
 	color: white;
 	font-size: 16px;
 	display: none;
+	  margin-top: 0px;
+	
+	border-radius: 5px;
+	cursor: pointer;
   }
-  
+
+.cancel-button {
+	padding: 5.5px 16.5px;
+}
   .search-result.editing .save-button {
 	display: block;
   }
@@ -382,8 +399,8 @@
 	width: 95%;
 	padding: 10px;
 	margin-top: 5px;
-	margin-bottom: -10px;
-  }
+	margin-bottom: -2.5px;
+	}
   
   .edit-answer-input {
 	padding: 10px 0px 0px;
@@ -413,7 +430,7 @@
 	background-color: #4CAF50;
 	border: none;
 	color: white;
-	padding: 10px 20px;
+	padding: 5.5px 19.5px;
 	text-align: center;
 	text-decoration: none;
 	display: inline-block;
@@ -422,20 +439,23 @@
 	margin-right: 15px;
 	border-radius: 5px;
 	cursor: pointer;
-  }
+	}
   
   .edit-button {
 	background-color: #008CBA;
 	border: none;
 	color: white;
-	padding: 10px 20px;
+	padding: 5px 15px;
 	text-align: center;
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
 	margin: 5px 3px;
-  }
-  
+	}
+
+.delete-button {
+	padding: 4.5px 16px;
+}
   .search-result ul {
 	list-style: none;
 	padding: 0;
@@ -580,7 +600,7 @@ img {
 		box-sizing: border-box;
 		resize: vertical;
 		margin-bottom: -27.5px;
-		font-size: 12.5px;
+		font-size: 13.5px;
 		font-family: emoji;
 }
 
@@ -622,12 +642,12 @@ img {
   }
   
   h5 {
-	margin-top: -2.5px;
+	margin-top: 10px;
 	margin-bottom: -10px;
-	font-size: 20px;
+	font-size: 21px;
 	margin-left: 5px;
 	margin-right: 5px;
-  }
+	}
   
   li {
 	white-space: pre-wrap;
@@ -638,7 +658,8 @@ img {
 	font-size: 16.5px;
 	margin-left: 5px;
 	margin-right: 5px;
-  }
+	/* font-weight: 549; */
+	}
   
   p {
 	white-space: pre-wrap;
@@ -649,6 +670,8 @@ img {
 	margin-bottom: 15px;
 	margin-left: 5px;
 	margin-right: 5px;
+    font-weight: bold;
+
   }
   
   h6 {
@@ -658,10 +681,10 @@ img {
 	word-wrap: break-word;
 	overflow-wrap: break-word;
 	white-space: normal;
-	font-size: 16.5px;
+	font-size: 13.75px;
 	margin-left: 5px;
 	margin-right: 5px;
-  }
+	}
   
   textarea {
 	resize: vertical;
@@ -712,12 +735,17 @@ img {
 
 }
 .highlighted-placeholder {
-    background-color: #f0f8ff; /* Light background color */
+    background-color: #e2ecf5; /* Light background color */
     border: 1px solid #dcdcdc; /* Light border color */
     border-radius: 10px; /* Rounded corners */
-    padding: 2px 4px; /* Padding inside the block */
-    display: inline-block; /* Make sure it doesn't break the line */
-    margin-left: 2px; /* Space between blocks */
+    padding: 1px 2.5px; /* Padding inside the block */
+    display: inline-flex; /* Make sure it doesn't break the line */
+    margin: 2px 2px; /* Vertical and horizontal space between blocks */
     color: #333; /* Text color */
     font-weight: bold; /* Bold text */
+    font-size: 12px;
+}
+
+.highlighted-placeholder.active {
+    background-color: #faeaea; /* Change to your desired color */
 }

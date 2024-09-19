@@ -50,18 +50,18 @@
            <!-- Add Question Form For MCQ -->
 <div id="add-question-form-mcq" class="add-question-form box" style="display: none">
     <h4 id="add-question-form-heading" class="add-question-form-heading"></h4>
-    <textarea id="new-question-text" placeholder="Enter your question"></textarea>
+    <textarea id="new-question-text" id="new-question-text-all" id="inputField" placeholder="Enter your question"></textarea>
 
     <!-- Updated ID for file input -->
     <input type="file" id="upload-question-images" accept="image/*" name="images[]" multiple>
     <div id="image-placeholder-message" style="display: none;"></div>
     <ul id="new-options-list">
-        <li><textarea class="new-option-input" placeholder="Option 1"></textarea></li>
-        <li><textarea class="new-option-input" placeholder="Option 2"></textarea></li>
-        <li><textarea class="new-option-input" placeholder="Option 3"></textarea></li>
-        <li><textarea class="new-option-input" placeholder="Option 4"></textarea></li>
+        <li><textarea class="new-option-input" id="inputField" placeholder="Option 1"></textarea></li>
+        <li><textarea class="new-option-input" id="inputField" placeholder="Option 2"></textarea></li>
+        <li><textarea class="new-option-input" id="inputField" placeholder="Option 3"></textarea></li>
+        <li><textarea class="new-option-input" id="inputField" placeholder="Option 4"></textarea></li>
     </ul>
-    <textarea id="new-answer-text" placeholder="Enter the correct answer"></textarea>
+    <textarea id="new-answer-text" id="inputField" placeholder="Enter the correct answer"></textarea>
     <br />
     <button id="save-new-question-mcq" class="save-new-question">Add Question</button>
     <button id="cancel-add-question-mcq" class="cancel-add-question">Cancel</button>
@@ -70,13 +70,13 @@
 <!-- Add Question Form for 'a' and 'b' -->
 <div id="add-question-form-ab" class="add-question-form box" style="display: none">
     <h4 id="add-question-form-heading-ab" class="add-question-form-heading"></h4>
-    <textarea class="question-input" placeholder="Enter your question"></textarea>
+    <textarea class="question-input" id="new-question-text-all" id="inputField" placeholder="Enter your question"></textarea>
 
     <!-- Updated ID for file input -->
     <input type="file" id="upload-ab-images" accept="image/*" name="images[]" multiple>
     <div id="image-placeholder-message-ab" style="display: none;"></div>
     <br />
-    <textarea class="edit-explanation-input" placeholder="Enter explanation"></textarea>
+    <textarea class="edit-explanation-input" id="inputField" placeholder="Enter explanation"></textarea>
     <br />
     <button id="save-new-question-ab" class="save-new-question">Add Question</button>
     <button id="cancel-add-question-ab" class="cancel-add-question">Cancel</button>
@@ -88,7 +88,7 @@
 
         <script src="Edit.js"> </script>
       
-   
+        
 
     </body>
 </html>

@@ -1,17 +1,5 @@
-// Global variables
-let questions = [];
-const questionLimitInput = document.getElementById("question-limit");
-const timeLimitInput = document.getElementById("time-limit");
-let currentQuestion = 0;
-let score = 0;
-let timeRemaining = 0;
-let timerInterval;
-let selectedAnswer = null;
-let questionLimit = 15;
-let typingInterval;
-let autoNextTimeout;
-let shuffledQuestions = []; // Initialized as an empty array
-let data = null;
+let questions = [], currentQuestion = 0, score = 0, timeRemaining = 0, timerInterval, selectedAnswer = null, questionLimit = 15, typingInterval, autoNextTimeout, shuffledQuestions = [], data = null;
+const urls = ['http://localhost:5500/', 'http://localhost:3001/', 'http://localhost:8080/'];
 const startScreenHeading = document.getElementById("start-screen-heading");
 const startScreen = document.querySelector(".start-screen");
 const quizScreen = document.querySelector(".quiz");
@@ -31,46 +19,66 @@ const quizHeading = document.querySelector(".quiz-heading");
 const uContainer = document.getElementById("u-container");
 const numberProgressContainer = document.querySelector(".number-progress");
 const questionContainer = document.querySelector(".question");
+const questionLimitInput = document.getElementById("question-limit");
+const timeLimitInput = document.getElementById("time-limit");
+let subjectName, questionHistory = {};
 
-let subjectName;
+// Functions for managing localStorage
+function saveQuestionHistory() {
+  localStorage.setItem('quizQuestionHistory', JSON.stringify(questionHistory));
+}
 
-// Function to load questions data (using Promise)
-async function loadQuestionData() {
-  try {
-    const response = await fetch('http://localhost:3001/questions.json'); 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching or parsing data:", error);
-    errorMessage.textContent = "";
-    
-    errorMessage.textContent =
-      "Error loading questions. Please refresh the page.";
-    errorMessage.classList.remove("hide");
-    return null; 
+function loadQuestionHistory() {
+  const savedHistory = localStorage.getItem('quizQuestionHistory');
+  if (savedHistory) {
+    questionHistory = JSON.parse(savedHistory);
   }
 }
 
-// Fetch and parse data from questions.json
-loadQuestionData()
-  .then((fetchedData) => {
-    if (fetchedData) {
-      data = fetchedData;
-      startButton.disabled = false;
-    } else {
-      console.error("Error fetching data. Data is null.");
-      errorMessage.textContent = "";
-      errorMessage.style.opacity = 1;
-      errorMessage.textContent =
-        "Error loading questions. Please refresh the page.";
-      errorMessage.classList.remove("hide");
+async function loadQuestionData() {
+  for (const baseUrl of urls) {
+    try {
+      const response = await fetch(`${baseUrl}questions.json`);
+      if (!response.ok) {
+        console.warn(`Failed to fetch from ${baseUrl}questions.json. Status: ${response.status}`);
+        continue;
+      }
+      const data = await response.json();
+
+      loadQuestionHistory();
+      data.sections.forEach(section => {
+        if (!questionHistory[section.section]) {
+          questionHistory[section.section] = [];
+        }
+      });
+
+      return data;
+    } catch (error) {
+      console.error(`Error fetching or parsing data from ${baseUrl}questions.json:`, error);
     }
-  });
+  }
 
-// Start Quiz button event
+  displayError("Error loading questions. Please refresh the page.");
+  return null;
+}
+
+function displayError(message) {
+  errorMessage.textContent = message;
+  errorMessage.classList.remove("hide");
+  errorMessage.style.opacity = 1;
+}
+
+loadQuestionData().then((fetchedData) => {
+  if (fetchedData) {
+    data = fetchedData;
+    startButton.disabled = false;
+  } else {
+    console.error("Data is null.");
+    displayError("Error loading questions. Please refresh the page.");
+  }
+});
+
 startButton.addEventListener("click", startQuiz);
-
-// Event listeners for buttons
 nextButton.addEventListener("click", nextQuestion);
 previousButton.addEventListener("click", previousQuestion);
 stopButton.addEventListener("click", stopQuiz);
@@ -81,35 +89,20 @@ function validateInputs() {
   const timeLimitValue = parseInt(timeLimitInput.value);
   const maxQuestions = questions.length;
 
+  let errorMessageText = "";
+
   if (isNaN(questionLimitValue) || isNaN(timeLimitValue)) {
-    startButton.disabled = true;
-    errorMessage.textContent = "";
-    errorMessage.style.opacity = 1;
-    errorMessage.textContent = "Please enter valid question and time limits.";
-    errorMessage.classList.remove("hide");
-    return;
+    errorMessageText = "Please enter valid question and time limits.";
   } else if (questionLimitValue < 30 || timeLimitValue < 30) {
-    startButton.disabled = true;
-    errorMessage.textContent = "";
-    errorMessage.style.opacity = 1;
-    errorMessage.textContent =
-      "Question limit and time limit must be at least 30.";
-    errorMessage.classList.remove("hide");
-    return;
-  } else if (
-    questionLimitValue > maxQuestions ||
-    timeLimitValue > maxQuestions
-  ) {
-    startButton.disabled = true;
-    errorMessage.textContent = "";
-    errorMessage.style.opacity = 1;
-    errorMessage.textContent = `Question and time limits cannot exceed ${maxQuestions}.`;
-    errorMessage.classList.remove("hide");
-    return;
-  } else {
-    startButton.disabled = false;
-    errorMessage.classList.add("hide");
+    errorMessageText = "Question and time limit must be at least 30.";
+  } else if (questionLimitValue > maxQuestions || timeLimitValue > maxQuestions) {
+    errorMessageText = `Question and time limits cannot exceed ${maxQuestions}.`;
   }
+
+  startButton.disabled = !!errorMessageText;
+  errorMessage.textContent = errorMessageText;
+  errorMessage.style.opacity = errorMessageText ? 1 : 0;
+  errorMessage.classList.toggle("hide", !errorMessageText);
 }
 
 questionLimitInput.addEventListener("input", validateInputs);
@@ -121,10 +114,7 @@ function startQuiz() {
   startButton.disabled = false;
 
   if (questionLimitValue < 30 || timeLimitValue < 30) {
-    errorMessage.textContent = "";
-    errorMessage.style.opacity = 1;
-    errorMessage.textContent =
-      "Question limit and time limit must be at least 30.";
+    errorMessage.textContent = "Question limit and time limit must be at least 30.";
     errorMessage.classList.remove("hide");
     return;
   } else {
@@ -144,25 +134,21 @@ function startQuiz() {
 
     if (section) {
       questions = section.questions;
-      shuffledQuestions = shuffleArray(questions.slice(0, questionLimit)); // Shuffle within section
+      shuffledQuestions = selectQuestions(questions, questionLimit, subjectName);
     } else {
       console.error("Subject not found:", subjectName);
-      errorMessage.textContent = "";
-      errorMessage.style.opacity = 1;
       errorMessage.textContent = "Subject not found. Please refresh the page.";
       errorMessage.classList.remove("hide");
       return;
     }
   } else {
     console.warn("Subject name not yet received from parent window.");
-    errorMessage.textContent = "";
-    errorMessage.style.opacity = 1;
     errorMessage.textContent = "Loading subject...";
     errorMessage.classList.remove("hide");
     return;
   }
 
-  questions.forEach((question) => {
+  shuffledQuestions.forEach((question) => {
     question.answered = false;
   });
 
@@ -180,128 +166,144 @@ function startQuiz() {
   displayQuestion();
 }
 
+function selectQuestions(allQuestions, limit, subject) {
+  let selectedQuestions = [];
+  let availableQuestions = allQuestions.filter(q => !questionHistory[subject].includes(q.question));
+
+  if (availableQuestions.length < limit) {
+    const historyQuestions = questionHistory[subject];
+    while (selectedQuestions.length < limit) {
+      if (availableQuestions.length === 0) {
+        if (historyQuestions.length === 0) break;
+        const randomIndex = Math.floor(Math.random() * historyQuestions.length);
+        const question = historyQuestions.splice(randomIndex, 1)[0];
+        if (!selectedQuestions.some(q => q.question === question)) {
+          selectedQuestions.push(allQuestions.find(q => q.question === question));
+        }
+      } else {
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        const question = availableQuestions.splice(randomIndex, 1)[0];
+        selectedQuestions.push(question);
+        questionHistory[subject].push(question.question);
+      }
+    }
+    if (historyQuestions.length < questionHistory[subject].length) {
+      questionHistory[subject] = [];
+    }
+  } else {
+    while (selectedQuestions.length < limit && availableQuestions.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+      const question = availableQuestions.splice(randomIndex, 1)[0];
+      selectedQuestions.push(question);
+      questionHistory[subject].push(question.question);
+    }
+  }
+
+  while (selectedQuestions.length < limit) {
+    const randomIndex = Math.floor(Math.random() * allQuestions.length);
+    const question = allQuestions[randomIndex];
+    if (!selectedQuestions.includes(question)) {
+      selectedQuestions.push(question);
+    }
+  }
+
+  saveQuestionHistory();
+  return shuffleArray(selectedQuestions);
+}
+
 function displayQuestion() {
   const questionData = shuffledQuestions[currentQuestion];
 
-  // Clear previous answers and question
   answerWrapperElement.innerHTML = "";
   questionElement.textContent = "";
 
-  // Add fade-in animation
   answerWrapperElement.style.animation = "fadeInUp 1s";
 
-  // Type the question text character by character
-  typeText(questionElement, questionData.question.replace(/\\n/g, '\n'), 25); 
+  displayTextAndImage(questionElement, questionData.question);
 
   if (questionData.answered) {
     questionData.options.forEach((option) => {
       const answerButton = document.createElement("div");
       answerButton.classList.add("answer");
 
-      if (typeof option === 'string') {
-        const parts = option.split(' ');
-        const textPart = parts.filter(part => !part.match(/(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)$/i)).join(' ');
-        answerButton.textContent = textPart;
+      displayTextAndImage(answerButton, option);
 
-        const imagePart = parts.find(part => part.match(/(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)$/i));
-        if (imagePart) {
-          const imgElement = document.createElement("img");
-          imgElement.src = imagePart;
-          imgElement.alt = "Option Image";
-          imgElement.style.maxWidth = '90%'; 
-          imgElement.style.margin = '10px'; 
-          answerButton.appendChild(imgElement);
-        }
-      } else if (typeof option === 'object') {
-        answerButton.textContent = option.text;
-
-        if (option.image) {
-          const imgElement = document.createElement("img");
-          imgElement.src = option.image;
-          imgElement.alt = "Option Image";
-          imgElement.style.maxWidth = '90%'; 
-          imgElement.style.margin = '10px'; 
-          answerButton.appendChild(imgElement);
-        }
-      }
-
-      if (typeof option === 'string' && option === questionData.correctAnswer) {
+      if (isCorrectAnswer(option, questionData.correctAnswer)) {
         answerButton.classList.add("correct");
-      } else if (typeof option === 'object' && option.text === questionData.correctAnswer) {
-        answerButton.classList.add("correct");
-      } else if (typeof option === 'string' && option === questionData.selectedAnswer) {
-        answerButton.classList.add("wrong");
-      } else if (typeof option === 'object' && option.text === questionData.selectedAnswer) {
+      } else if (option === questionData.selectedAnswer) {
         answerButton.classList.add("wrong");
       }
 
       answerButton.classList.add("disabled");
-
       answerWrapperElement.appendChild(answerButton);
     });
   } else {
-    // Shuffle the answer options for each question
     const shuffledOptions = shuffleArray(questionData.options);
 
-    // Type each answer option character by character
     shuffledOptions.forEach((option, index) => {
       const answerButton = document.createElement("div");
       answerButton.classList.add("answer");
 
-      // Handle string and object options
-      if (typeof option === 'string') {
-        // Split the option string by space
-        const parts = option.split(' ');
-        const textPart = parts.filter(part => !part.match(/(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)$/i)).join(' ');
-        answerButton.textContent = textPart;
+      displayTextAndImage(answerButton, option);
 
-        // Find the image filename
-        const imagePart = parts.find(part => part.match(/(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)$/i));
-        if (imagePart) {
-          const imgElement = document.createElement("img");
-          imgElement.src = imagePart;
-          imgElement.alt = "Option Image";
-          imgElement.style.maxWidth = '90%'; 
-          imgElement.style.margin = '10px'; 
-          answerButton.appendChild(imgElement);
-        }
-      } else if (typeof option === 'object') {
-        // Handle object with 'text' and 'image' properties
-        answerButton.textContent = option.text;
-
-        if (option.image) {
-          const imgElement = document.createElement("img");
-          imgElement.src = option.image;
-          imgElement.alt = "Option Image";
-          imgElement.style.maxWidth = '90%'; 
-          imgElement.style.margin = '10px'; 
-          answerButton.appendChild(imgElement);
-        }
-      }
-
-      // REPLACE THE OPTION HERE BEFORE PASSING TO typeText
-      option = option.replace(/\\n/g, '\n');
-
-      // Type the option text
-      typeText(answerButton, option, 0 + index * 0); // Delay options a bit
-
-      // Add event listener for answer selection
-      answerButton.addEventListener("click", () => selectAnswer(answerButton));
+      answerButton.addEventListener("click", () => selectAnswer(answerButton, option));
       answerWrapperElement.appendChild(answerButton);
     });
   }
 
-  // Update question progress display
   const currentQuestionNumber = document.querySelector(".current");
   currentQuestionNumber.textContent = currentQuestion + 1;
   const totalQuestionNumber = document.querySelector(".total");
   totalQuestionNumber.textContent = questionLimit;
 
-  // Disable previous button for the first question
   previousButton.disabled = currentQuestion === 0;
 }
 
-function selectAnswer(answerButton) {
+function displayTextAndImage(element, content) {
+  // Ensure the container has a center alignment
+  if (typeof content === 'string') {
+    const parts = content.split(/(\(image\/[^)]+\))/); // Split text and image link
+    parts.forEach(part => {
+      if (part.startsWith('(image/') && part.endsWith(')')) {
+        // Handle image link
+        const imgElement = document.createElement("img");
+        imgElement.src = part.slice(1, -1); // Remove parentheses around image link
+        imgElement.alt = "Image"; // Add descriptive alt text if possible
+        imgElement.style.maxWidth = '30vw'; // Ensure image scales appropriately
+        imgElement.style.margin = '5px auto'; // Apply margin
+        element.appendChild(imgElement);
+      } else if (part.trim() !== '') {
+        // Handle text part and replace '\n' with <br>
+        const textWithBreaks = part.replace(/\n/g, '<br>');
+        const divElement = document.createElement("div");
+        divElement.innerHTML = textWithBreaks;
+        element.appendChild(divElement);
+      }
+    });
+  } else if (typeof content === 'object' && content !== null) {
+    // Handle object with both text and image fields
+    if (content.text) {
+      const textWithBreaks = content.text.replace(/\n/g, '<br>');
+      const textNode = document.createElement("div");
+      textNode.innerHTML = textWithBreaks;
+      element.appendChild(textNode);
+    }
+    if (content.image) {
+      const imgElement = document.createElement("img");
+      imgElement.src = content.image;
+      imgElement.alt = "Image"; // Add descriptive alt text if possible
+      imgElement.style.maxWidth = '30vw'; // Ensure image scales appropriately
+      imgElement.style.margin = '5px auto'; // Apply margin
+      element.appendChild(imgElement);
+    }
+  } else {
+    console.error('Unsupported content type');
+  }
+}
+
+
+
+function selectAnswer(answerButton, selectedOption) {
   if (shuffledQuestions[currentQuestion].answered) {
     return;
   }
@@ -313,11 +315,8 @@ function selectAnswer(answerButton) {
 
   const allAnswers = answerWrapperElement.querySelectorAll(".answer");
   allAnswers.forEach((answer) => {
-    const answerText = typeof answer.textContent === 'string' ? answer.textContent : answer.textContent.trim(); 
-
-    if (typeof correctAnswer === 'string' && answerText === correctAnswer) {
-      answer.classList.add("correct");
-    } else if (typeof correctAnswer === 'object' && answerText === correctAnswer.text) {
+    const optionText = answer.textContent;
+    if (isCorrectAnswer(optionText, correctAnswer)) {
       answer.classList.add("correct");
     } else {
       answer.classList.add("disabled");
@@ -325,10 +324,7 @@ function selectAnswer(answerButton) {
     answer.removeEventListener("click", selectAnswer);
   });
 
-  if (typeof correctAnswer === 'string' && selectedAnswer.textContent === correctAnswer) {
-    score++;
-    selectedAnswer.classList.add("correct");
-  } else if (typeof correctAnswer === 'object' && selectedAnswer.textContent === correctAnswer.text) {
+  if (isCorrectAnswer(selectedOption, correctAnswer)) {
     score++;
     selectedAnswer.classList.add("correct");
   } else {
@@ -336,12 +332,35 @@ function selectAnswer(answerButton) {
   }
 
   shuffledQuestions[currentQuestion].answered = true;
-  shuffledQuestions[currentQuestion].selectedAnswer =
-    selectedAnswer.textContent;
+  shuffledQuestions[currentQuestion].selectedAnswer = selectedOption;
 
   nextButton.disabled = false;
 
   autoNextTimeout = setTimeout(nextQuestion, 400);
+}
+
+function isCorrectAnswer(option, correctAnswer) {
+  if (Array.isArray(correctAnswer)) {
+    return correctAnswer.includes(option);
+  }
+  
+  if (typeof correctAnswer === 'string') {
+    return option === correctAnswer;
+  }
+  
+  if (typeof correctAnswer === 'object' && correctAnswer !== null) {
+    if (correctAnswer.text && correctAnswer.image) {
+      return option.includes(correctAnswer.text) && option.includes(correctAnswer.image);
+    }
+    if (correctAnswer.text) {
+      return option.includes(correctAnswer.text);
+    }
+    if (correctAnswer.image) {
+      return option.includes(correctAnswer.image);
+    }
+  }
+  
+  return false;
 }
 
 function findNextUnansweredQuestion() {
@@ -471,40 +490,19 @@ function startTimer() {
 
   timerInterval = setInterval(() => {
     timeRemaining--;
+
     const hours = Math.floor(timeRemaining / 3600);
     const minutes = Math.floor((timeRemaining % 3600) / 60);
-    const seconds = Math.floor(timeRemaining % 60);
+    const seconds = timeRemaining % 60;
+    progressText.innerHTML = hours ? `${hours}h ${minutes}m ${seconds}s` : minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
-    if (hours > 0) {
-      progressText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
-    } else if (minutes > 0) {
-      progressText.innerHTML = `${minutes}m ${seconds}s`;
-    } else {
-      progressText.innerHTML = `${seconds}s`;
-    }
-
-    const percentageRemaining =
-      (timeRemaining / (parseInt(timeLimitInput.value) * 60)) * 100;
+    const percentageRemaining = (timeRemaining / (parseInt(timeLimitInput.value) * 60)) * 100;
     progressBar.style.width = `${percentageRemaining}%`;
+    progressText.style.color = percentageRemaining >= 49.5 ? "#fff" : "#000";
 
-    if (percentageRemaining >= 49.5) {
-      progressText.style.color = "#fff";
-    } else {
-      progressText.style.color = "#000";
-    }
-
-    const progressBarRect = progressBar.getBoundingClientRect();
-    const progressTextRect = progressText.getBoundingClientRect();
-
-    if (
-      progressBarRect.right < progressTextRect.left ||
-      progressBarRect.bottom < progressTextRect.top ||
-      progressBarRect.top > progressTextRect.bottom
-    ) {
-      progressText.classList.add("visible");
-    } else {
-      progressText.classList.remove("visible");
-    }
+    const barRect = progressBar.getBoundingClientRect();
+    const textRect = progressText.getBoundingClientRect();
+    progressText.classList.toggle("visible", barRect.right < textRect.left || barRect.bottom < textRect.top || barRect.top > textRect.bottom);
 
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
@@ -520,7 +518,7 @@ function restartQuiz() {
   endScreen.classList.add("hide");
   startScreen.classList.remove("hide");
   hideQuiz();
- 
+  // We don't reset questionHistory here, so it persists between quiz attempts
 }
 
 window.addEventListener("message", function (event) {
@@ -544,21 +542,15 @@ window.addEventListener("message", function (event) {
       }
     });
   } else if (event.data === 'reloadQuiz') {
-    // Handle 'reloadQuiz' message here
-    console.log("Received 'reloadQuiz' message. Reloading...");
-    location.reload(); // Reloads the current page
+    // Handle quiz reload if needed
+    loadQuestionHistory(); // Reload question history on quiz reload
   }
 });
 
-
-
 function closeQuiz() {
-  
   window.parent.postMessage("closeQuiz", "*");
-  
 }
 
-// Modified to reset typing animation
 function typeText(element, text, speed, callback) {
   let i = 0;
   let interval = null; 
@@ -655,7 +647,6 @@ window.addEventListener("message", function (event) {
     const errorMessage = document.getElementById("error-message");
 
     // Set the text content initially
-    // REMOVE THIS LINE: startScreenHeading.textContent = subjectName; 
     quizHeading.textContent = subjectName;
     endScreenHeading.textContent = subjectName;
 
@@ -679,13 +670,18 @@ window.addEventListener("message", function (event) {
       30,
     );
     typeText(document.getElementById('start-button'), 'কুইজ শুরু করুন', 30); 
-
-    // Call showStartScreen with the loaded data
-    // showStartScreen(subjectName, data); 
   }
 });
-function closeQuiz() {
-  window.parent.postMessage("closeQuiz", "*");
-  location.reload(); // Reloads the current page
+
+// Function to clear question history (optional, for testing or user preference)
+function clearQuestionHistory() {
+  localStorage.removeItem('quizQuestionHistory');
+  questionHistory = {};
+  data.sections.forEach(section => {
+    questionHistory[section.section] = [];
+  });
+  console.log("Question history cleared");
 }
 
+// You might want to call this function when initializing the quiz or on a user action
+// clearQuestionHistory();

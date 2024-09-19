@@ -1,11 +1,11 @@
+/* General Styles */
 body {
- 
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   font-family: Arial, sans-serif;
-  overflow: hidden; 
+  overflow: hidden;
   animation: fadeIn 1s;
 }
 
@@ -14,22 +14,22 @@ html, body {
 }
 
 * {
-   -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
-
-
+/* Container */
 .container {
   background: #1f2847;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   margin: 0;
   padding: 20px;
-  text-align: center; 
+  text-align: center;
   animation: fadeIn 1s;
   margin-top: 135px;
 }
 
+/* Heading */
 .heading {
   font-size: 30px;
   color: #fff;
@@ -37,6 +37,7 @@ html, body {
   animation: fadeInUp 1s;
 }
 
+/* Labels */
 label {
   font-size: 12px;
   margin-bottom: 10px;
@@ -44,6 +45,7 @@ label {
   animation: fadeInUp 1s;
 }
 
+/* Inputs */
 input[type="number"] {
   width: 100%;
   padding: 10px;
@@ -57,113 +59,104 @@ input[type="number"] {
   animation: fadeInUp 1s;
 }
 
-
-
-#limit{
+#limit {
   margin-bottom: -10px;
 }
 
+/* Hide Elements */
 .hide {
   display: none;
 }
 
-#overlap-adjust{
+/* Overlap Adjust */
+#overlap-adjust {
   position: relative;
 }
 
+/* Fixed Container */
 .u-container {
   text-align: center;
   position: fixed;
   top: 0;
-
-
   padding: 2px;
   background-color: #fff;
   z-index: 1000;
-  
   box-sizing: border-box;
   position: relative;
 }
 
-
-
+/* Number Progress */
 .number-progress {
   display: flex;
   align-items: center;
-  /* Removed justify-content to allow progress to take full available space */
-
-
-   margin-top: 15px;
-  left: 25px; /* Align it to the left edge */
+  margin-top: 15px;
+  left: 25px;
   right: 25px;
-  z-index: 10; /* Ensure it stays on top of other elements */
-  background-color: #fff; /* Add a background color to ensure visibility */
+  z-index: 10;
+  background-color: #fff;
   text-align: center;
   animation: fadeInUp 1s;
 }
+
+/* Floating Close Button */
 .floating-close {
-	
-	background: #bde0c5;
-	height: 35px;
-	width: 35px;
-	border-radius: 50%;
-	transition: 0.4s ease;
-	cursor: pointer;
-	z-index: 1001;
-	text-decoration: none;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	animation: gradientChange 1s linear infinite;
+  background: #bde0c5;
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  transition: 0.4s ease;
+  cursor: pointer;
+  z-index: 1001;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: gradientChange 1s linear infinite;
 }
 
 .close {
-	position: relative;
-	height: 12px;
-	width: 15px;
+  position: relative;
+  height: 12px;
+  width: 15px;
 }
 
 .close::before,
 .close::after {
-	content: "";
-	position: absolute;
-	height: 1.5px;
-	width: 100%;
-	background-color: #202020;
-	border-radius: 2.5px;
-	transition: 0.4s ease;
+  content: "";
+  position: absolute;
+  height: 1.5px;
+  width: 100%;
+  background-color: #202020;
+  border-radius: 2.5px;
+  transition: 0.4s ease;
 }
 
 .close::before {
-	transform: rotate(45deg);
-	top: 50%;
-	left: 50%;
-	transform-origin: center;
-	translate: -50% -50%;
-	/* animation: closeBefore 1s ease-in-out infinite alternate; */
+  transform: rotate(45deg);
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  translate: -50% -50%;
 }
 
 .close::after {
-	transform: rotate(135deg);
-	top: 50%;
-	left: 50%;
-	transform-origin: center;
-	translate: -50% -50%;
-	/* animation: closeAfter 1.5s ease-in-out infinite alternate; */
+  transform: rotate(135deg);
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  translate: -50% -50%;
 }
 
-
+/* Number and Timer Container */
 .number-container,
 .timer-container {
   display: flex;
   align-items: center;
-
 }
 
 .number-container {
   position: fixed;
-  margin-right: 0px; 
-
+  margin-right: 0px;
 }
 
 .number {
@@ -179,12 +172,12 @@ input[type="number"] {
 
 .number .total {
   color: #576081;
-  font-size: 20px;
+  font-size: 22px;
 }
 
-/* Allow progress to take full width */
+/* Progress Bar */
 .progress {
-  width: calc(100% - 100px); 
+  width: calc(100% - 100px);
   height: 16.5px;
   background: transparent;
   border-radius: 25px;
@@ -193,9 +186,6 @@ input[type="number"] {
   transform: translateX(0%);
   margin-bottom: 5px;
   margin-right: -3.5px;
-
-
-
 }
 
 .progress-bar {
@@ -204,7 +194,6 @@ input[type="number"] {
   border-radius: 2.5px;
   background: linear-gradient(to right, #ea517c, #b478f1);
   transition: 1s linear;
-
 }
 
 .progress-text {
@@ -212,12 +201,11 @@ input[type="number"] {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   font-size: 12px;
   font-weight: 500;
-
 }
 
+/* Timer */
 .timer {
   color: #414557;
   font-size: 16.5px;
@@ -225,31 +213,26 @@ input[type="number"] {
   animation: fadeInUp 1s;
 }
 
-
+/* Questions and Answers */
 .question {
   color: #000;
   font-size: 18px;
   font-weight: 500;
-
-  z-index: 10; /* Ensure it stays on top of other elements */
-  background-color: #fff; /* Add a background color to ensure visibility */
+  z-index: 10;
+  background-color: #fff;
   text-align: left;
   overflow-wrap: break-word;
   margin-right: 22px;
   margin-left: 0px;
-   animation: fadeInUp 1s;
-   
+  animation: fadeInUp 1s;
   margin-top: 10px;
-
 }
 
 .question-wrapper,
 .answer-wrapper {
-
-
-  background-color: #fff; /* Add a background color to ensure visibility */
+  background-color: #fff;
   text-align: left;
-  margin-bottom: 20px; /* Add margin to the bottom of the question and answer wrappers */
+  margin-bottom: 20px;
   animation: fadeInUp 1s;
 }
 
@@ -267,8 +250,6 @@ input[type="number"] {
   position: relative;
   cursor: pointer;
   padding-right: 35px;
-
-
 }
 
 .answer .checkbox {
@@ -309,31 +290,21 @@ input[type="number"] {
   border-color: #cd7774;
 }
 
-.question-wrapper,
-.answer-wrapper {
-   /* This makes it fixed */
-  /* This makes it fixed */
-
-  background-color: #fff; /* Add a background color to ensure visibility */
-  text-align: left;
-}
-
+/* Quiz Heading */
 .quiz-heading {
-  /* Customize as needed */
-  color: #000; /* Or any color you prefer */
-  font-size: 25px; 
-  margin-top: 25px; /* Remove margin-top */ 
-
+  color: #000;
+  font-size: 25px;
+  margin-top: 25px;
   text-align: center;
   margin: auto;
-  text-shadow: 
-  -1px -1px 0 #ff0000, 
-  1px -1px 0 #ea517c,
-  -1px 1px 0 #a8c2a8,
-  1px 1px 0 #b478f1;
+  text-shadow:
+    -1px -1px 0 #ff0000,
+    1px -1px 0 #ea517c,
+    -1px 1px 0 #a8c2a8,
+    1px 1px 0 #b478f1;
   text-align: center;
   top: 20px;
-  left: 1px;/* Align it to the left edge */
+  left: 1px;
   right: 2px;
   width: 90%;
   padding: 2px;
@@ -343,6 +314,7 @@ input[type="number"] {
   animation: fadeInUp 1s;
 }
 
+/* Quiz */
 .quiz {
   align-items: center;
   padding: 10px;
@@ -354,9 +326,11 @@ input[type="number"] {
   margin: auto;
   padding: 20px;
   background-color: #fff;
-  
+  overflow: auto;
+  height: 80vh;
 }
 
+/* Buttons */
 .btn {
   width: 100%;
   height: 45px;
@@ -368,20 +342,21 @@ input[type="number"] {
   font-weight: 500;
   cursor: pointer;
   transition: 0.3s linear;
-
 }
 
 .btn:hover {
   background: #8bb1d0;
 }
+
 .btn:disabled {
   background: #576081;
   cursor: not-allowed;
 }
 
+/* Specific Buttons */
 .previous {
   animation: fadeInUp 1s;
- background: #ea517c;
+  background: #ea517c;
   border: 0.5px solid #868698;
   color: #fff;
 }
@@ -395,11 +370,12 @@ input[type="number"] {
 
 .next {
   animation: fadeInUp 1s;
- background: #ea517c;
+  background: #ea517c;
   border: 0.5px solid #868698;
   color: #fff;
 }
 
+/* Button Wrapper */
 .button-wrapper {
   display: flex;
   justify-content: space-around;
@@ -411,13 +387,13 @@ input[type="number"] {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-
 }
 
 .button-wrapper .btn {
   width: 30%;
 }
 
+/* End Screen */
 .end-screen .score {
   color: #fff;
   font-size: 25px;
@@ -434,12 +410,13 @@ input[type="number"] {
   animation: fadeInUp 1s;
 }
 
+/* Time and Question Limits */
 .time-limit,
 .question-limit {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
-  text-align: center; 
+  text-align: center;
   animation: fadeInUp 1s;
 }
 
@@ -473,7 +450,6 @@ input[type="number"] {
   font-weight: 500;
   margin-bottom: 30px;
   animation: fadeInUp 1s;
-  
 }
 
 .answer.disabled {
@@ -481,20 +457,20 @@ input[type="number"] {
   pointer-events: none;
 }
 
-/* Style for the options container */
+/* Options Container */
 .options {
   display: flex;
-  justify-content: space-between; 
+  justify-content: space-between;
   margin-bottom: 30px;
   animation: fadeInUp 1s;
 }
 
-/* Style for each option */
+/* Each Option */
 .options > div {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 45%; 
+  width: 45%;
   animation: fadeInUp 1s;
 }
 
@@ -520,7 +496,7 @@ input[type="number"] {
   border-color: #0c80ef;
 }
 
-/* Style for the error message */
+/* Error Message */
 .error-message {
   color: red;
   font-size: 14px;
@@ -546,4 +522,3 @@ input[type="number"] {
     transform: translateY(0);
   }
 }
-

@@ -13,7 +13,8 @@ let searchTimeout = null;
 let isModifyActive = false;
 let editsudject = null;
 let editedSectionab = null;
-
+let imageReferences = [];
+let formData = new FormData(); 
 const addButton = document.getElementById("add-button");
 const modifyButton = document.querySelector(".Modify");
 const searchButton = document.querySelector(".btn-search");
@@ -22,7 +23,12 @@ const searchResults = document.querySelector(".search-results");
 const clearButton = document.querySelector(".btn-clear");
 const searchBox = document.querySelector(".wrap-input-17");
 const subjectDropdown = document.getElementById("subject-dropdown");
-
+const urls = [
+    'http://localhost:5500/',
+    'http://localhost:3001/',
+    'http://localhost:8080/'
+  ];
+  
 searchResults.style.display = "none";
 subjectDropdown.disabled = true;
 
@@ -42,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const headingText = "Add & Modify";
     const navItemsText = ["(ক)", "(খ)", "MCQ"];
-    const typingSpeed = 15;
+    const typingSpeed = 40;
     let subjectLabelTyped = false;
 
     function typeHeading() {
@@ -212,7 +218,7 @@ let currentTypingElements = []; // Array to keep track of elements currently bei
 function performSearch() {
     searchResultsOpen = true;
     showSearchResults();
-
+    resetUploadedImages();
     const searchTerm = searchInput.value.trim().toLowerCase();
     const searchResultsContainer = document.querySelector(".search-results");
 
@@ -240,12 +246,19 @@ function performSearch() {
     }, 100);
 }
 
+// Helper function to replace different line breaks with <br> tags
+
+
+function convertNewlinesToHtml(text) {
+    return text.replace(/\n/g, '<br>');
+}
+
 function displaySearchResults(matchingQuestions, isAbJson) {
     const container = document.querySelector(".search-results");
     container.innerHTML = "";
 
     if (matchingQuestions.length === 0) {
-        typeText(container, "<h6>No matching questions found.</h6>", 30);
+        typeText(container, "<p>No matching questions found.</p>", 30);
         currentTypingElements.push(container); // Track this element
         return;
     }
@@ -257,34 +270,37 @@ function displaySearchResults(matchingQuestions, isAbJson) {
         const questionElement = document.createElement("div");
         questionElement.className = "search-result";
         questionElement.dataset.section = section;
-
-        container.appendChild(questionElement);
+        questionElement.dataset.questionIndex = questionIndex;
 
         let content = "";
         if (isAbJson) {
             questionElement.dataset.subject = currentSubject;
-            questionElement.dataset.questionIndex = questionIndex;
             content = `
                 <h4>${currentSubject}</h4>
-                <h5>${processTextWithImages(questionData.question)}</h5>
-                <p>Explanation: ${processTextWithImages(questionData.explanation)}</p>
+                <h5>${convertNewlinesToHtml(processTextWithImages(questionData.question))}</h5>
+                <h6>Explanation: ${convertNewlinesToHtml(processTextWithImages(questionData.explanation))}</h6>
                 <button class="edit-button" onclick="editQuestion(this, true)">Modify</button>
                 <button class="delete-button" onclick="deleteQuestion(this, true)">Delete</button>
             `;
+            resetUploadedImages(); // Reset images for AB JSON
         } else {
             content = `
                 <h4>${section}</h4>
-                <h5>${processTextWithImages(question.question)}</h5>
-                <ul>${question.options.map(option => `<li>${processTextWithImages(option)}</li>`).join("")}</ul>
-                <p>Answer: ${processTextWithImages(question.correctAnswer)}</p>
-                <button class="edit-button" onclick="editQuestion(this)">Modify</button>
+                <h5>${convertNewlinesToHtml(processTextWithImages(question.question))}</h5>
+                <ul>${question.options.map(option => `<li>${convertNewlinesToHtml(processTextWithImages(option))}</li>`).join("")}</ul>
+                <h6>Answer: ${convertNewlinesToHtml(processTextWithImages(question.correctAnswer))}</h6>
+                <button class="edit-button" onclick="editQuestion(this, false)">Modify</button>
                 <button class="delete-button" onclick="deleteQuestion(this)">Delete</button>
             `;
+            resetUploadedImages(); // Reset images for non-AB JSON
         }
+
+        questionElement.innerHTML = content;
+        container.appendChild(questionElement);
 
         typeText(questionElement, content, 2.5, () => {
             typeNextQuestion(index + 1);
-            addImageZoomListeners(questionElement);
+            addImageZoomListeners(questionElement); // Add zoom listeners
         });
 
         currentTypingElements.push(questionElement); // Track this element
@@ -293,135 +309,249 @@ function displaySearchResults(matchingQuestions, isAbJson) {
     typeNextQuestion(0);
 }
 
-async function fetchData(file) {
-    try {
-        const response = await fetch(`http://localhost:3001/${file}`);
-        return await response.json();
-    } catch (error) {
-        console.error("Fetch error:", error);
-        throw error;
+
+
+
+  async function fetchData(file) {
+    for (const baseUrl of urls) {
+      try {
+        const response = await fetch(`${baseUrl}${file}`);
+        if (!response.ok) {
+          console.warn(`Failed to fetch from ${baseUrl}${file}. Status: ${response.status}`);
+          continue; // Try the next URL
+        }
+        const data = await response.json();
+        console.log(`Data successfully fetched from ${baseUrl}${file}`);
+        return data;
+      } catch (error) {
+        console.error(`Error fetching from ${baseUrl}${file}:`, error);
+      }
     }
-}
+    
+    // If all URLs fail, throw an error
+    throw new Error('Failed to fetch data from all provided URLs.');
+  }
+  
 
 function processAndDisplayResults(data, searchTerm, isAbJson = false, section = "") {
     const searchResultsContainer = document.querySelector(".search-results");
-    const term = searchTerm.toLowerCase();
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase().replace(/\s+/g, ' '); // Normalize search term
     let matchingQuestions = [];
 
     if (isAbJson) {
         const sectionData = data[currentSubject]?.[section] || [];
         matchingQuestions = sectionData
-            .map((q, index) => ({
-                section,
-                questionData: q,
-                matchLength: q.question.trim().toLowerCase().length - term.length,
-                index
-            }))
-            .filter(q => q.questionData.question.trim().toLowerCase().includes(term) ||
-                q.questionData.explanation.trim().toLowerCase().includes(term));
+            .map((q, index) => {
+                const normalizedQuestion = q.question.trim().toLowerCase().replace(/\s+/g, ' '); // Normalize question text
+                return {
+                    section,
+                    questionData: q,
+                    matchLength: normalizedQuestion.length - normalizedSearchTerm.length,
+                    index,
+                    normalizedQuestion
+                };
+            })
+            .filter(q => q.normalizedQuestion.includes(normalizedSearchTerm));
     } else {
         const sectionData = data.sections?.find(s => s.section?.toLowerCase() === currentSubject.toLowerCase())?.questions || [];
         matchingQuestions = sectionData
-            .map(q => ({
-                section: currentSubject,
-                question: q,
-                matchLength: q.question.trim().toLowerCase().length - term.length
-            }))
-            .filter(q => q.question.question.trim().toLowerCase().includes(term) ||
-                q.question.options.some(option => option.trim().toLowerCase().includes(term)) ||
-                q.question.correctAnswer.trim().toLowerCase().includes(term));
+            .map((q, index) => {
+                const normalizedQuestion = q.question.trim().toLowerCase().replace(/\s+/g, ' '); // Normalize question text
+                return {
+                    section: currentSubject,
+                    question: q,
+                    matchLength: normalizedQuestion.length - normalizedSearchTerm.length,
+                    index,
+                    normalizedQuestion
+                };
+            })
+            .filter(q => q.normalizedQuestion.includes(normalizedSearchTerm));
     }
 
     matchingQuestions.sort((a, b) => a.matchLength - b.matchLength);
     displaySearchResults(matchingQuestions, isAbJson);
 }
 
-function processTextWithImages(text) {
+
+function processTextWithImages(text, isEditMode = false) {
+    if (isEditMode) {
+        // In edit mode, return the original text with image links
+        return text.replace(/<div class="image-container"><img src="([^"]+)"[^>]+><\/div>/g, '($1)');
+    }
+
+    // For display mode, replace image links with image elements
     return text.replace(/\(image\/[^\)]+\)/g, match => {
         const imgSrc = match.slice(1, -1); // Remove surrounding parentheses
         return `<div class="image-container"><img src="${imgSrc}" class="image-zoom" alt="Image"></div>`;
     });
 }
 
+
+  async function deleteQuestion(button, isAbJson = false) {
+    const questionElement = button.parentElement;
+    let questionText = questionElement.querySelector('h5')?.innerHTML || ""; // Use innerHTML to include HTML tags
+    const subject = questionElement.querySelector('h4')?.textContent?.trim() || null;
+    const sectionName = questionElement.dataset.section;
+    const questionIndex = questionElement.dataset.questionIndex;
+  
+    // Convert HTML image tags to (image/image.png) format
+    questionText = processTextWithImages(questionText, true); // Use isEditMode = true for text format
+  
+    if (!confirm("Are you sure you want to delete this question?")) return;
+  
+    const data = isAbJson 
+        ? { subject, section: sectionName, questionIndex, questionText }
+        : { questionText, section: sectionName, questionIndex };
+  
+    const endpoint = isAbJson ? 'ab.json' : 'questions.json';
+  
+    async function tryDelete(urls) {
+      for (const baseUrl of urls) {
+        try {
+          const response = await fetch(`${baseUrl}${endpoint}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+  
+          if (response.ok) {
+            questionElement.remove();
+            isModifyActive = false;
+           performSearch();
+            return;
+          } else {
+            console.warn(`Failed to delete from ${baseUrl}${endpoint}. Status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error(`Error deleting from ${baseUrl}${endpoint}:`, error);
+        }
+      }
+  
+      throw new Error('Failed to delete question from all provided URLs.');
+    }
+  
+    try {
+      await tryDelete(urls);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+  
+
 function addImageZoomListeners(container) {
     container.querySelectorAll('.image-container').forEach(imgContainer => {
         const img = imgContainer.querySelector('.image-zoom');
-        let currentZoom = 1;
-        let isDragging = false;
-        let startX, startY, scrollLeft, scrollTop;
+        let currentZoom = 1, isDragging = false, startX, startY, scrollLeft, scrollTop;
+        let lastTouchTime = 0, touchCount = 0, touchTimer, initialDistance = 0;
+        const zoomLevels = [1, 1.5, 2, 2.5, 3];
+        let zoomIndex = 0;
 
-        function updateImagePosition() {
+        function updatePosition() {
             const rect = imgContainer.getBoundingClientRect();
             const imgRect = img.getBoundingClientRect();
-            
-            const maxScrollX = imgRect.width - rect.width;
-            const maxScrollY = imgRect.height - rect.height;
-            
-            imgContainer.scrollLeft = Math.max(0, Math.min(imgContainer.scrollLeft, maxScrollX));
-            imgContainer.scrollTop = Math.max(0, Math.min(imgContainer.scrollTop, maxScrollY));
+            imgContainer.scrollLeft = Math.max(0, Math.min(imgContainer.scrollLeft, imgRect.width - rect.width));
+            imgContainer.scrollTop = Math.max(0, Math.min(imgContainer.scrollTop, imgRect.height - rect.height));
         }
 
-        img.addEventListener('dblclick', (e) => {
+        function handleZoom(e, touch = false) {
             e.preventDefault();
             const oldZoom = currentZoom;
-            currentZoom = (currentZoom % 3) + 1; // Cycle through zoom levels 1, 2, 3
-            
+            currentZoom = zoomLevels[zoomIndex = (zoomIndex + 1) % zoomLevels.length];
             const rect = imgContainer.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
+            const x = touch ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+            const y = touch ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
             img.style.transformOrigin = `${0*x}px ${0*y}px`;
             img.style.transform = `scale(${currentZoom})`;
-            
             imgContainer.style.overflow = currentZoom > 1 ? 'auto' : 'hidden';
-            
             if (currentZoom > oldZoom) {
                 imgContainer.scrollLeft += x * (currentZoom - oldZoom);
                 imgContainer.scrollTop += y * (currentZoom - oldZoom);
             }
-            
-            updateImagePosition();
-        });
+            updatePosition();
+        }
 
-        imgContainer.addEventListener('mousedown', (e) => {
+        function resetZoom() {
+            currentZoom = zoomLevels[zoomIndex = 0];
+            img.style.transform = `scale(1)`;
+            imgContainer.style.overflow = 'hidden';
+            updatePosition();
+        }
+
+        function startDrag(e, touch = false) {
             if (currentZoom > 1) {
                 isDragging = true;
                 imgContainer.classList.add('dragging');
-                startX = e.pageX - imgContainer.offsetLeft;
-                startY = e.pageY - imgContainer.offsetTop;
+                startX = touch ? e.touches[0].pageX : e.pageX;
+                startY = touch ? e.touches[0].pageY : e.pageY;
                 scrollLeft = imgContainer.scrollLeft;
                 scrollTop = imgContainer.scrollTop;
             }
-        });
+        }
 
-        imgContainer.addEventListener('mousemove', (e) => {
+        function drag(e, touch = false) {
             if (!isDragging) return;
             e.preventDefault();
-            const x = e.pageX - imgContainer.offsetLeft;
-            const y = e.pageY - imgContainer.offsetTop;
-            const walkX = (x - startX) * 1.5; // Adjust the multiplier for smoother dragging
-            const walkY = (y - startY) * 1.5;
-            imgContainer.scrollLeft = scrollLeft - walkX;
-            imgContainer.scrollTop = scrollTop - walkY;
-            updateImagePosition();
-        });
+            const x = touch ? e.touches[0].pageX : e.pageX;
+            const y = touch ? e.touches[0].pageY : e.pageY;
+            imgContainer.scrollLeft = scrollLeft - (x - startX);
+            imgContainer.scrollTop = scrollTop - (y - startY);
+            updatePosition();
+        }
 
-        imgContainer.addEventListener('mouseup', () => {
+        function endDrag() {
             isDragging = false;
             imgContainer.classList.remove('dragging');
+        }
+
+        // Mouse events
+        img.addEventListener('dblclick', handleZoom);
+        imgContainer.addEventListener('mousedown', e => startDrag(e));
+        imgContainer.addEventListener('mousemove', e => drag(e));
+        imgContainer.addEventListener('mouseup', endDrag);
+        imgContainer.addEventListener('mouseleave', endDrag);
+
+        // Touch events
+        imgContainer.addEventListener('touchstart', e => {
+            const now = Date.now();
+            if (now - lastTouchTime < 500) touchCount++;
+            else touchCount = 1;
+            lastTouchTime = now;
+            clearTimeout(touchTimer);
+            touchTimer = setTimeout(() => {
+                if (touchCount === 2) handleZoom(e, true);
+                else if (touchCount === 3) resetZoom();
+                touchCount = 0;
+            }, 500);
+            if (e.touches.length === 1) startDrag(e, true);
+            else if (e.touches.length === 2) {
+                initialDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+            }
         });
 
-        imgContainer.addEventListener('mouseleave', () => {
-            isDragging = false;
-            imgContainer.classList.remove('dragging');
+        imgContainer.addEventListener('touchmove', e => {
+            if (e.touches.length === 1) drag(e, true);
+            else if (e.touches.length === 2) {
+                const currentDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const zoomFactor = currentDistance / initialDistance;
+                currentZoom = Math.min(Math.max(1, currentZoom * zoomFactor), 3);
+                zoomIndex = zoomLevels.findIndex(z => z >= currentZoom);
+                img.style.transform = `scale(${currentZoom})`;
+                imgContainer.style.overflow = currentZoom > 1 ? 'auto' : 'hidden';
+                updatePosition();
+            }
         });
+
+        imgContainer.addEventListener('touchend', endDrag);
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    addImageZoomListeners(document);
-});
-
+document.addEventListener('DOMContentLoaded', () => addImageZoomListeners(document));
 
 function showSection(element, dataFile, section, isModifyActive = true) {
     setActive(element, dataFile);
@@ -451,13 +581,41 @@ function showSectionB(element, dataFile, section) {
 
 
 
+// Helper function to normalize newline characters
+
+async function uploadImages(files, imageReferences) {
+    const formData = new FormData();
+    const imageMap = new Map(files.map(file => [file.name, file]));
+
+    imageReferences.forEach(imageName => {
+        const file = imageMap.get(imageName);
+        if (file) formData.append('images[]', file);
+    });
+    for (const baseUrl of urls) {
+        try {
+          const response = await fetch(`${baseUrl}upload`, {
+            method: 'POST',
+            body: formData,
+        });
+        if (!response.ok) throw new Error('Image upload failed');
+        const result = await response.json();
+        console.log('Image upload successful:', result);
+    } catch (error) {
+        console.error('Error during image upload:', error);
+    }
+ }
+}
 
 async function editQuestion(button, isAbJson = false) {
     const questionElement = button.parentElement;
     const section = questionElement.dataset.section;
     const subject = questionElement.querySelector("h4")?.textContent || null;
-    const questionIndex = questionElement.dataset.questionIndex || null;
-    const questionId = questionElement.dataset.questionId || null;
+    const questionIndex = questionElement.dataset.questionIndex;
+
+    console.log("Editing question at index:", questionIndex, "isAbJson:", isAbJson);
+
+    currentTypingElements.forEach(({ typingInterval }) => clearInterval(typingInterval));
+    currentTypingElements = [];
 
     // Hide all other search results
     document.querySelectorAll(".search-result").forEach(result => {
@@ -465,7 +623,7 @@ async function editQuestion(button, isAbJson = false) {
     });
 
     // Hide current question view
-    questionElement.querySelectorAll("h4, h5, p, button").forEach(el => el.style.display = "none");
+    questionElement.querySelectorAll("h4, h5, h6, ul, button").forEach(el => el.style.display = "none");
 
     // Create editing elements
     const createEditElement = (className, tagName = "textarea") => {
@@ -474,67 +632,120 @@ async function editQuestion(button, isAbJson = false) {
         return el;
     };
 
+    const normalizeAndExtractText = (text) => {
+        if (!text) return '';
+        return text
+            .replace(/\r\n|\r/g, '\n')          // Normalize \r\n and \r to \n
+            .replace(/<br\s*\/?>/gi, '\n')     // Replace <br> tags with \n
+            .replace(/\(image\/([^)]*)\)/g, '($1)'); // Remove image prefix
+    };
+
+    function addImagePrefix(text) {
+        if (!text) return '';
+        return text.replace(/\(([^/][^)]+)\)/g, '(image/$1)');
+    }
+
     const sectionDisplay = document.createElement("div");
     sectionDisplay.classList.add("section-display");
-    
+
     const editInput = createEditElement("edit-input");
-    const editExplanationInput = createEditElement("edit-explanation-input");
     const saveButton = createEditElement("save-button", "button");
     saveButton.textContent = "Save";
     const cancelButton = createEditElement("cancel-button", "button");
     cancelButton.textContent = "Cancel";
 
-    const handleSave = async () => {
-        const newQuestion = editInput.value.trim();
-        const newExplanation = editExplanationInput.value.trim();
-        if (newQuestion.length === 0 || newExplanation.length === 0) {
-            alert("Question and explanation cannot be empty.");
-            return;
-        }
-        isModifyActive = false;
-        const updatedData = { subject, section, newQuestion, newExplanation, questionIndex };
-        try {
-            saveButton.disabled = true;
-            sendDataToServer(updatedData, "PUT", subject, section, questionIndex);
-            reloadQuiz();
-            performSearch();
-        } catch (error) {
-            console.error("Error during save operation:", error);
-        } finally {
-            saveButton.disabled = false;
-        }
-    };
+    // Create file input for image uploads
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.id = "upload-question-images";
+    fileInput.multiple = true;
+    fileInput.classList.add("image-upload");
 
-    const handleCancel = () => {
-        isModifyActive = false;
-        document.querySelectorAll(".search-result").forEach(result => result.style.display = "block");
-        performSearch();
-    };
+    // Create message div for image upload instructions
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("image-upload-message");
+    messageDiv.id = "image-placeholder-message";
+    messageDiv.style.display = "none";
+
+    // Append elements to questionElement
+    questionElement.append(fileInput, messageDiv);
+
+    // Initialize handleImageUploads
+    try {
+        handleImageUploads(".image-upload", ".image-upload-message");
+    } catch (error) {
+        console.error("Error initializing handleImageUploads:", error);
+    }
 
     if (isAbJson) {
-        try {
-            const response = await fetch(`http://localhost:3001/${currentDataFile}`);
-            const data = await response.json();
-            if (data[subject]?.[section]?.[questionIndex]) {
-                const questionData = data[subject][section][questionIndex];
-                sectionDisplay.textContent = `${subject}`;
-                editInput.value = questionData.question;
-                editExplanationInput.value = questionData.explanation;
-                questionElement.append(sectionDisplay, editInput, editExplanationInput, saveButton, cancelButton);
-                saveButton.addEventListener("click", handleSave);
+        // Handle ab.json format
+        const editExplanationInput = createEditElement("edit-explanation-input");
+
+        sectionDisplay.textContent = `${subject}`;
+
+        let processedQuestionText = processTextWithImages(questionElement.querySelector("h5").innerHTML, true);
+        let processedExplanationText = processTextWithImages(questionElement.querySelector("h6").innerHTML, true).replace(/^Explanation:\s*/, "");
+
+        editInput.value = normalizeAndExtractText(processedQuestionText);
+        editExplanationInput.value = normalizeAndExtractText(processedExplanationText);
+
+        questionElement.append(sectionDisplay, editInput, fileInput, messageDiv, editExplanationInput, saveButton, cancelButton);
+
+        saveButton.addEventListener("click", async () => {
+            let newQuestion = normalizeAndExtractText(editInput.value.trim());
+            let newExplanation = normalizeAndExtractText(editExplanationInput.value.trim());
+            if (newQuestion.length === 0 || newExplanation.length === 0) {
+                alert("Question and explanation cannot be empty.");
+                return;
             }
-        } catch (error) {
-            console.error("Error fetching ab.json:", error);
-        }
+            isModifyActive = false;
+            const imageReferences = [
+                ...extractImageReferences(newQuestion),
+                ...extractImageReferences(newExplanation)
+            ];
+
+            // Prefix image references
+            newQuestion = addImagePrefix(newQuestion);
+            newExplanation = addImagePrefix(newExplanation);
+
+            if (imageFiles.length > 0) {
+                try {
+                    await uploadImages(imageFiles, imageReferences);
+                    console.log("Images uploaded successfully.");
+                } catch (error) {
+                    console.error("Error during image upload:", error);
+                    alert("Error uploading images. Please try again.");
+                    return;
+                }
+            }
+
+            const updatedData = { 
+                subject, 
+                section, 
+                newQuestion, 
+                newExplanation, 
+                questionIndex,
+            };
+            try {
+                saveButton.disabled = true;
+                await sendDataToServer(updatedData, "PUT");
+                performSearch();
+            } catch (error) {
+                console.error("Error during save operation:", error);
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
     } else {
+        // Handle questions.json format
         const sectionName = questionElement.querySelector("h4").textContent;
-        const questionText = questionElement.querySelector("h5").textContent;
-        const options = Array.from(questionElement.querySelectorAll("li")).map(li => li.textContent);
-        const answer = questionElement.querySelector("p").textContent.replace("Answer: ", "");
+        const questionText = normalizeAndExtractText(processTextWithImages(questionElement.querySelector("h5").innerHTML, true));
+        const options = Array.from(questionElement.querySelectorAll("li")).map(li => normalizeAndExtractText(processTextWithImages(li.innerHTML, true)));
+        const answer = normalizeAndExtractText(processTextWithImages(questionElement.querySelector("h6").innerHTML, true)).replace(/^Answer:\s*/, "");
 
         sectionDisplay.textContent = sectionName;
         editInput.value = questionText;
-        questionElement.querySelectorAll("h4, h5, ul, p, button").forEach(el => el.style.display = "none");
 
         const editOptionsList = document.createElement("ul");
         options.forEach(option => {
@@ -548,31 +759,49 @@ async function editQuestion(button, isAbJson = false) {
         const editAnswerInput = createEditElement("edit-answer-input");
         editAnswerInput.value = answer;
 
-        questionElement.append(sectionDisplay, editInput, editOptionsList, editAnswerInput, saveButton, cancelButton);
+        questionElement.append(sectionDisplay, editInput, fileInput, messageDiv, editOptionsList, editAnswerInput, saveButton, cancelButton);
 
         saveButton.addEventListener("click", async () => {
-            const newQuestion = editInput.value.trim();
-            const newOptions = Array.from(editOptionsList.querySelectorAll("textarea")).map(input => input.value.trim());
-            const newAnswer = editAnswerInput.value.trim();
+            let newQuestion = normalizeAndExtractText(editInput.value.trim());
+            let newOptions = Array.from(editOptionsList.querySelectorAll("textarea")).map(input => normalizeAndExtractText(input.value.trim()));
+            let newAnswer = normalizeAndExtractText(editAnswerInput.value.trim());
             if (newQuestion.length === 0 || newOptions.some(option => option.length === 0) || newAnswer.length === 0) {
                 alert("Please fill in all fields.");
                 return;
             }
             isModifyActive = false;
+            const imageReferences = [
+                ...extractImageReferences(newQuestion),
+                ...newOptions.flatMap(option => extractImageReferences(option)),
+                ...extractImageReferences(newAnswer)
+            ];
+
+            // Prefix image references
+            newQuestion = addImagePrefix(newQuestion);
+            newOptions = newOptions.map(option => addImagePrefix(option));
+            newAnswer = addImagePrefix(newAnswer);
+
+            if (imageFiles.length > 0) {
+                try {
+                    await uploadImages(imageFiles, imageReferences);
+                    console.log("Images uploaded successfully.");
+                } catch (error) {
+                    console.error("Error during image upload:", error);
+                    alert("Error uploading images. Please try again.");
+                    return;
+                }
+            }
+
             const questionData = {
-                oldQuestion: questionText,
-                oldOptions: options,
-                oldAnswer: answer,
                 newQuestion,
                 newOptions,
                 newAnswer,
-                questionId,
-                section: sectionName
+                questionIndex,
+                section: sectionName,
             };
             try {
                 saveButton.disabled = true;
-                await sendDataToServer(questionData, "PUT", sectionName);
-                reloadQuiz();
+                await sendDataToServer(questionData, "PUT");
                 performSearch();
             } catch (error) {
                 console.error("Error during save operation:", error);
@@ -582,30 +811,114 @@ async function editQuestion(button, isAbJson = false) {
         });
     }
 
-    cancelButton.addEventListener("click", handleCancel);
+    cancelButton.addEventListener("click", () => {
+        isModifyActive = false;
+        document.querySelectorAll(".search-result").forEach(result => result.style.display = "block");
+        questionElement.querySelectorAll("h4, h5, h6, ul, button").forEach(el => el.style.display = "block");
+        performSearch();
+    });
+    resetUploadedImages();
+    editInput.focus();
     isModifyActive = true;
 }
 
 
-// Ensure this function returns a promise
-async function sendDataToServer(data, method, sectionName, questionIndex) {
-    const response = await fetch(`http://localhost:3001/${sectionName}${questionIndex ? `/${questionIndex}` : ''}`, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
+// Function to reset uploaded images
+function resetUploadedImages() {
+    imageReferences = [];
+
+    // Clear formData
+    formData = new FormData();
+    // Clear file inputs
+    const fileInputSelectors = ['#upload-question-images', '#upload-ab-images'];
+    fileInputSelectors.forEach(selector => {
+        const fileInput = document.querySelector(selector);
+        if (fileInput) fileInput.value = '';
     });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+    
+    // Hide placeholder messages
+    const messageDivSelectors = ['#image-placeholder-message', '#image-placeholder-message-ab'];
+    messageDivSelectors.forEach(selector => {
+        const messageDiv = document.querySelector(selector);
+        if (messageDiv) messageDiv.style.display = 'none';
+    });
+    
+    // Reset global variables
+    imageFiles = [];
+    image = [];
+    typingComplete = false;
+    existingMessage = '';
+    currentActivePlaceholder = null;
+    buttonsEnabled = false;
+    
+    // Clear message text
+    
+    // Clear image maps and placeholders
+    imageMap.clear();
+    uploadedImageNames.clear();
+    
+    // Clear active image container
+    if (activeImageContainer) {
+        activeImageContainer.innerHTML = '';
+        activeImageContainer = null;
     }
-
-    return response.json();
+    
+    // Remove highlighted placeholder buttons
+    document.querySelectorAll('.highlighted-placeholder').forEach(button => button.remove());
+    
+    // Clear and hide message div
+    const messageDiv = document.querySelector('#message-div');
+    if (messageDiv) {
+        messageDiv.innerHTML = '';
+        messageDiv.style.display = 'none';
+    }
+    
+    // Clear textarea
+    const textarea = document.querySelector('#textarea-selector');
+    if (textarea) textarea.value = '';
+    
+    // Reset file input
+    const fileInput = document.querySelector('#file-input');
+    if (fileInput) fileInput.value = '';
+    
+    console.log("Uploaded images, formData, and imageReferences have been reset.");
 }
 
-function reloadQuiz() {
-    console.log("Quiz reloaded");
+// Ensure this function returns a promise
+  async function sendDataToServer(data, method) {
+    for (const baseUrl of urls) {
+      try {
+        const response = await fetch(`${baseUrl}${currentDataFile}`, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+  
+        if (response.ok) {
+          return response.json();
+        } else {
+          console.warn(`Failed to send data to ${baseUrl}${currentDataFile}. Status: ${response.status}`);
+        }
+      } catch (error) {
+        console.error(`Error sending data to ${baseUrl}${currentDataFile}:`, error);
+      }
+    }
+  
+    throw new Error('Failed to send data to all provided URLs.');
+  }
+  
+
+// Utility function to extract image names from text
+function extractImageReferences(text) {
+    const regex = /\(([^)]+)\)/g;
+    let match;
+    const images = [];
+    while ((match = regex.exec(text)) !== null) {
+        images.push(match[1]); // Get image name without parentheses
+    }
+    return images;
 }
 
 
@@ -613,7 +926,7 @@ function reloadQuiz() {
 
 addButton.addEventListener("click", function () {
     addButtonClickedCount++;
-
+    resetAddForm()
     const formMCQ = document.getElementById("add-question-form-mcq");
     const formAB = document.getElementById("add-question-form-ab");
     const searchResults = document.querySelector(".search-results");
@@ -623,6 +936,7 @@ addButton.addEventListener("click", function () {
         if (addButtonClickedCount % 2 === 1) {
             if (currentSubject) {
                 formMCQ.style.display = "block";
+
                 searchResults.style.display = "none";
                 searchInput.style.display = "none";
                 searchInput.value = "";
@@ -631,6 +945,7 @@ addButton.addEventListener("click", function () {
                 clearSearchResults();
                 this.textContent = "Cancel Add";
                 resetSearchBox();
+                resetUploadedImages();
                 isModifyActive = false;
             } else {
                 alert("Please select a subject first.");
@@ -648,6 +963,7 @@ addButton.addEventListener("click", function () {
             searchInput.style.display = "none";
             searchInput.value = "";
             resetSearchBox();
+            resetUploadedImages();
             isModifyActive = false;
         }
     } else if (currentDataFile === "ab.json") {
@@ -662,6 +978,7 @@ addButton.addEventListener("click", function () {
                 modifyButton.classList.remove("active");
                 clearSearchResults();
                 resetSearchBox();
+                resetUploadedImages();
                 isModifyActive = false;
             } else {
                 alert("Please select a subject and section first.");
@@ -679,6 +996,7 @@ addButton.addEventListener("click", function () {
             modifyButton.classList.remove("active");
             clearSearchResults();
             resetSearchBox();
+            resetUploadedImages();
             isModifyActive = false;
         }
     }
@@ -690,6 +1008,7 @@ function switchToAddFormAB() {
 
     if (formMCQ.style.display === "block" && currentDataFile === "ab.json") {
         formMCQ.style.display = "none";
+        resetAddForm()
         formAB.style.display = "block";
         isModifyActive = false;
     }
@@ -701,6 +1020,7 @@ function switchToAddFormMcq() {
 
     if (formAB.style.display === "block" && currentDataFile === "questions.json") {
         formAB.style.display = "none";
+        resetAddForm()
         formMCQ.style.display = "block";
         isModifyActive = false;
     }
@@ -732,267 +1052,612 @@ document.getElementById("cancel-add-question-ab").addEventListener("click", func
     addButton.click();
     resetAddForm();
 });
-
-// Function to handle image uploads and insert placeholders in the textarea
-function handleImageUploads(textareaSelector, fileInputSelector, messageSelector) {
+  let imageFiles = [];
+    let typingComplete = false;
+    let existingMessage = '';
+    let imageMap = new Map();
+    let uploadedImageNames = new Set();
+    let activeImageContainer = null;
+    let currentActivePlaceholder = null;
+    let buttonsEnabled = false;
+function handleImageUploads(fileInputSelector, messageSelector, typingSpeed = 25) {
     const fileInput = document.querySelector(fileInputSelector);
     const messageDiv = document.querySelector(messageSelector);
+  
 
-    if (!fileInput) {
-        console.error(`Element not found for selector: ${fileInputSelector}`);
-        return;
+    if (!fileInput || !messageDiv) {
+        console.error(`Element not found for selector: ${fileInputSelector} or ${messageSelector}`);
+        return () => [];
+    }
+ 
+    function resetState() {
+        typingComplete = false;
+        existingMessage = '';
+        activeImageContainer = null;
+        currentActivePlaceholder = null;
+        console.log('State reset for new upload session');
+    }
+ 
+   
+    
+    function typeMessage(messageText, callback) {
+        typingComplete = false;
+        messageDiv.style.display = 'block';
+        messageDiv.innerHTML = '';
+        typeText(messageDiv, messageText, typingSpeed, () => {
+            typingComplete = true;
+            if (callback) callback();
+        });
     }
 
-    if (!messageDiv) {
-        console.error(`Element not found for selector: ${messageSelector}`);
-        return;
+    function updateButtonStates() {
+        document.querySelectorAll('.highlighted-placeholder').forEach(button => {
+            button.disabled = !buttonsEnabled;
+        });
+        console.log('Buttons ' + (buttonsEnabled ? 'enabled' : 'disabled'));
     }
 
-    let imageFiles = [];
+    function startTyping() {
+        buttonsEnabled = false;
+        updateButtonStates();
+    }
 
     fileInput.addEventListener('change', event => {
-        const files = event.target.files;
+        const files = Array.from(event.target.files);
         if (files.length === 0) return;
 
-        const textarea = document.querySelector(textareaSelector);
-        if (!textarea) {
-            console.error(`Element not found for selector: ${textareaSelector}`);
-            return;
-        }
+        
 
+        let imageUploaded = false;
         const imagePlaceholders = [];
 
-        Array.from(files).forEach(file => {
+        files.forEach(file => {
             if (file.type.startsWith('image/')) {
+                if (!imageUploaded) {
+                    resetState(); // Only reset state when the first image is processed
+                    imageUploaded = true;
+                }
+
                 const sanitizedFileName = file.name.replace(/\s+/g, '_');
+
+                if (uploadedImageNames.has(sanitizedFileName)) {
+                    alert('This image has already been uploaded.');
+                    return;
+                }
+
+                uploadedImageNames.add(sanitizedFileName);
+
                 const reader = new FileReader();
 
                 reader.onload = function(e) {
-                    const imgPlaceholder = `<span class="highlighted-placeholder">(${sanitizedFileName})</span>`;
+                    const imgPlaceholder = `(${sanitizedFileName})`;
+                    
                     imagePlaceholders.push(imgPlaceholder);
+                    imageMap.set(imgPlaceholder, e.target.result);
+                    console.log('Image added to map:', imgPlaceholder, e.target.result.substring(0, 50) + '...');
 
-         
-                    // Add placeholder to textarea
-                    const cursorPos = textarea.selectionStart;
-                    const textBefore = textarea.value.substring(0, cursorPos);
-                    const textAfter = textarea.value.substring(cursorPos);
-                    textarea.value = textBefore + sanitizedFileName + textAfter; // Simple text placeholder, style will be applied via CSS
-                    textarea.focus();
-                    textarea.selectionStart = textarea.selectionEnd = cursorPos + sanitizedFileName.length;
+                    const currentPlaceholders = Array.from(imageMap.keys())
+                        .map(ph => `<button class="highlighted-placeholder" data-placeholder="${ph}" aria-label="Show image ${ph}" disabled>${ph}</button>`)
+                        .join(', ');
 
-                    // Show message about inserting images
-                    const message = `Put this text = ${imagePlaceholders.join(' ')} <br> <b>where you want to add the images</b>`;
-                    messageDiv.style.display = 'block';
-                    messageDiv.innerHTML = '';
-                    typeText(messageDiv, message, 50); // Optional typing effect
+                    const messageText = `Put this text = <br> ${currentPlaceholders} <br> <strong>where you want to add the image</strong>`;
 
-                    // Display image previews
-                    messageDiv.innerHTML += `<div>${imageFiles.map(img => `<img src="${img.src}" style="max-width: 200px; margin-left: 5px;">`).join('')}</div>`;
+                    if (!typingComplete) {
+                        existingMessage = messageText;
+                        typeMessage(messageText, () => {
+                            setupButtonListeners();
+                            buttonsEnabled = true;
+                            updateButtonStates();
+                        });
+                    } else {
+                        const newPlaceholderText = `<button class="highlighted-placeholder" data-placeholder="${imgPlaceholder}" aria-label="Show image ${imgPlaceholder}" disabled>${imgPlaceholder}</button>`;
+                        let updatedMessage;
+                        if (existingMessage.includes('<strong>where you want to add the image</strong>')) {
+                            updatedMessage = existingMessage.replace(/<strong>where you want to add the image<\/strong>/, ` ${newPlaceholderText} <br> <strong>where you want to add the image</strong>`);
+                        } else {
+                            updatedMessage = existingMessage.replace(/<br>$/, ` ${newPlaceholderText} <br>`);
+                        }
+                        startTyping();
+                        typeMessage(updatedMessage, () => {
+                            setupButtonListeners();
+                            buttonsEnabled = true;
+                            updateButtonStates();
+                        });
+                        existingMessage = updatedMessage;
+                    }
                 };
 
                 reader.readAsDataURL(file);
                 imageFiles.push(new File([file], sanitizedFileName, { type: file.type }));
             } else {
                 alert('Please upload only image files.');
-                fileInput.value = ''; // Clear the file input
             }
         });
+
+        if (!imageUploaded) {
+            fileInput.value = ''; // Clear the file input if no valid images were uploaded
+        }
     });
 
-    // Return a function to get the image files
-    return () => imageFiles;
-}
-function addPlaceholdersToContentEditable(containerSelector, placeholders) {
-    const container = document.querySelector(containerSelector);
-    if (!container) {
-        console.error(`Element not found for selector: ${containerSelector}`);
-        return;
+    function setupButtonListeners() {
+        document.querySelectorAll('.highlighted-placeholder').forEach(button => {
+            button.removeEventListener('click', handleButtonClick);
+            button.addEventListener('click', handleButtonClick);
+        });
+        console.log('Button listeners set up');
     }
 
-    container.innerHTML = placeholders.join(' ');
+    function handleButtonClick(event) {
+        console.log('Button clicked, buttonsEnabled:', buttonsEnabled);
+        if (!buttonsEnabled) return;
+    
+        const placeholder = this.getAttribute('data-placeholder');
+        const imageSrc = imageMap.get(placeholder);
+    
+        console.log('Button clicked:', placeholder);
+        console.log('Image source:', imageSrc ? imageSrc.substring(0, 50) + '...' : 'not found');
+    
+        if (!imageSrc) {
+            console.error('Image source not found for placeholder:', placeholder);
+            return;
+        }
+    
+        // Copy placeholder text to clipboard
+        navigator.clipboard.writeText(placeholder).then(() => {
+            console.log(`${placeholder} Copied!`);
+    
+            // Create and show the popup message
+            const popupMessage = document.createElement('div');
+            popupMessage.innerText = `${placeholder} Copied!`;
+            popupMessage.style.position = 'fixed';
+            popupMessage.style.bottom = '25px';
+            popupMessage.style.right = '15px';
+            popupMessage.style.backgroundColor = '#4CAF50';
+            popupMessage.style.color = '#fff';
+            popupMessage.style.padding = '5px 10px';
+            popupMessage.style.borderRadius = '5px';
+            popupMessage.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+            popupMessage.style.zIndex = '1000';
+            popupMessage.style.fontSize = '12px';
+            document.body.appendChild(popupMessage);
+    
+            // Remove the popup after 3 seconds
+            setTimeout(() => {
+                document.body.removeChild(popupMessage);
+            }, 750);
+    
+        }).catch(err => {
+            console.error('Failed to copy placeholder:', err);
+        });
+    
+        if (placeholder === currentActivePlaceholder) {
+            this.classList.remove('active');
+            if (activeImageContainer) {
+                activeImageContainer.innerHTML = '';
+            }
+            currentActivePlaceholder = null;
+        } else {
+            document.querySelectorAll('.highlighted-placeholder').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+    
+            // If the activeImageContainer doesn't exist yet, create it inside the messageDiv
+            if (!activeImageContainer) {
+                activeImageContainer = document.createElement('div');
+                activeImageContainer.id = 'active-image-container';
+                activeImageContainer.style.position = 'relative';  // Make sure it's positioned relative
+                activeImageContainer.style.overflow = 'hidden';    // Prevent image overflow
+                activeImageContainer.style.width = '100%';         // Ensure it takes up the full width
+                activeImageContainer.style.maxHeight = '400px';    // Limit the max height
+               
+                messageDiv.appendChild(activeImageContainer);      // Append to the message div
+            }
+    
+            // Clear out the old content if any
+            activeImageContainer.innerHTML = '';
+    
+            // Create the image container and image element
+            const imgContainer = document.createElement('div');
+            imgContainer.classList.add('image-container');
+            imgContainer.style.textAlign = 'center';  // Ensure the image is centered
+    
+            const newImageElement = document.createElement('img');
+            newImageElement.src = imageSrc;
+            newImageElement.classList.add('image-zoom');
+            newImageElement.style.maxWidth = '100%';    // Ensure image doesn't overflow
+            newImageElement.style.maxHeight = '100%';   // Ensure image doesn't overflow
+            newImageElement.style.marginTop = '7.5px';   // Add margin for spacing
+    
+            // Append the image to the container
+            imgContainer.appendChild(newImageElement);
+            activeImageContainer.appendChild(imgContainer);
+    
+            console.log('Image element created and appended');
+    
+            currentActivePlaceholder = placeholder;
+            setupZoomListeners(imgContainer, newImageElement);
+        }
+    }
+    
+
+    function setupZoomListeners(container, img) {
+        let currentZoom = 1, isDragging = false, startX, startY, scrollLeft, scrollTop;
+        let lastTouchTime = 0, touchCount = 0, touchTimer, initialDistance = 0;
+        const zoomLevels = [1, 1.5, 2, 2.5, 3];
+        let zoomIndex = 0;
+
+        function updatePosition() {
+            const rect = container.getBoundingClientRect();
+            const imgRect = img.getBoundingClientRect();
+            container.scrollLeft = Math.max(0, Math.min(container.scrollLeft, imgRect.width - rect.width));
+            container.scrollTop = Math.max(0, Math.min(container.scrollTop, imgRect.height - rect.height));
+        }
+
+        function handleZoom(e, touch = false) {
+            e.preventDefault();
+            const oldZoom = currentZoom;
+            currentZoom = zoomLevels[zoomIndex = (zoomIndex + 1) % zoomLevels.length];
+            const rect = container.getBoundingClientRect();
+            const x = touch ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+            const y = touch ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+            img.style.transformOrigin = `${x}px ${y}px`;
+            img.style.transform = `scale(${currentZoom})`;
+            container.style.overflow = currentZoom > 1 ? 'auto' : 'hidden';
+            if (currentZoom > oldZoom) {
+                container.scrollLeft += x * (currentZoom - oldZoom);
+                container.scrollTop += y * (currentZoom - oldZoom);
+            }
+            updatePosition();
+        }
+
+        function resetZoom() {
+            currentZoom = zoomLevels[zoomIndex = 0];
+            img.style.transform = `scale(1)`;
+            container.style.overflow = 'hidden';
+            updatePosition();
+        }
+
+        function startDrag(e, touch = false) {
+            if (currentZoom > 1) {
+                isDragging = true;
+                container.classList.add('dragging');
+                startX = touch ? e.touches[0].pageX : e.pageX;
+                startY = touch ? e.touches[0].pageY : e.pageY;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+                e.preventDefault();
+            }
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            container.classList.remove('dragging');
+        }
+
+        container.addEventListener('mousedown', startDrag);
+        container.addEventListener('mouseup', stopDrag);
+        container.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const x = e.pageX - startX;
+            const y = e.pageY - startY;
+            container.scrollLeft = scrollLeft - x;
+            container.scrollTop = scrollTop - y;
+            updatePosition();
+        });
+
+        container.addEventListener('dblclick', handleZoom);
+        container.addEventListener('wheel', e => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIndex = Math.min(zoomIndex + 1, zoomLevels.length - 1);
+            } else {
+                zoomIndex = Math.max(zoomIndex - 1, 0);
+            }
+            handleZoom(e);
+        });
+
+        // Touch support for mobile devices
+        container.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0], touch2 = e.touches[1];
+                initialDistance = Math.hypot(touch2.pageX - touch1.pageX, touch2.pageY - touch1.pageY);
+            } else if (e.touches.length === 1) {
+                if (e.timeStamp - lastTouchTime < 300) {
+                    handleZoom(e, true);
+                } else {
+                    startDrag(e, true);
+                }
+                lastTouchTime = e.timeStamp;
+            }
+        });
+        container.addEventListener('touchend', stopDrag);
+        container.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const x = e.touches[0].pageX - startX;
+            const y = e.touches[0].pageY - startY;
+            container.scrollLeft = scrollLeft - x;
+            container.scrollTop = scrollTop - y;
+            updatePosition();
+        });
+    }
+
+    return () => imageFiles;
 }
+
+
+// Initialize image file handlers
+const getMCQImageFiles = handleImageUploads('#upload-question-images', '#image-placeholder-message');
+const getABImageFiles = handleImageUploads('#upload-ab-images', '#image-placeholder-message-ab');
+
+
+function replacePlaceholdersWithFiles(text, imageMap) {
+    // Ensure text is a string
+    if (typeof text !== 'string') return text;
+
+    return text.replace(/\(([^)]+)\)/g, (match, p1) => {
+        // Check if the placeholder matches an image name in the imageMap
+        if (imageMap.has(p1)) {
+            return `${p1}`;
+        }
+        return match; // Return the original text if no image is found
+    });
+}
+
 
 // Function to validate form inputs
 function validateFormInputs(questionText, optionsText, answerText, explanationText, isMCQ) {
-    // Helper function to check if a field is valid (contains text or image link)
     function isFieldValid(field) {
         return field.trim() !== "" || /\(.*\.(?:gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)\)/.test(field);
     }
 
     if (isMCQ) {
-        // Check question, all options, and answer for MCQ
-        if (!isFieldValid(questionText)) return false;
-        if (optionsText.some(opt => !isFieldValid(opt))) return false;
-        if (!isFieldValid(answerText)) return false;
+        return isFieldValid(questionText) && optionsText.every(isFieldValid) && isFieldValid(answerText);
     } else {
-        // Check question and explanation for AB question
-        if (!isFieldValid(questionText)) return false;
-        if (!isFieldValid(explanationText)) return false;
+        return isFieldValid(questionText) && isFieldValid(explanationText);
     }
-
-    return true;
 }
 
-// Function to save question (MCQ or AB) with images and text
-function saveQuestion({ questionText, optionsText = [], answerText, explanationText, isMCQ, imageFiles }) {
+
+  
+  function saveQuestion({ questionText, optionsText = [], answerText, explanationText, isMCQ, imageFiles }) {
     if (!validateFormInputs(questionText, optionsText, answerText, explanationText, isMCQ)) {
-        return displayAlert("Please fill all required fields with either text or image placeholders.");
+      return displayAlert("Please fill all required fields with either text or image placeholders.");
     }
-
+  
     function formatImageFileNames(text) {
-        if (typeof text !== 'string') return text;
-        const imageFileNamePattern = /\b([A-Za-z0-9_-]+\.(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif))\b/g;
-        return text.replace(imageFileNamePattern, (match) => `image/${match}`);
+      return typeof text === 'string' ? text.replace(/\b([A-Za-z0-9_-]+\.(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif))\b/g, "image/$1") : text;
     }
-
-    function attachMatchedImagesToFormData(formData) {
-        function getImagePlaceholdersFromText(text) {
-            if (typeof text !== 'string') return [];
-            return text.match(/\b([A-Za-z0-9_-]+\.(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif))\b/g) || [];
-        }
-
-        const placeholders = [
-            ...getImagePlaceholdersFromText(questionText),
-            ...optionsText.flatMap(opt => getImagePlaceholdersFromText(opt)),
-            ...getImagePlaceholdersFromText(answerText),
-            ...getImagePlaceholdersFromText(explanationText)
-        ];
-
-        if (placeholders.length === 0) return;
-
-        placeholders.forEach(placeholder => {
-            const matchingFile = imageFiles.find(file => file.name === placeholder);
-            if (matchingFile) {
-                formData.append('images[]', matchingFile);
-            }
-        });
-    }
-
+  
+    const imageMap = new Map();
+    imageFiles.forEach(file => imageMap.set(file.name.replace(/\s+/g, '_'), file));
+  
     const formattedQuestionText = formatImageFileNames(questionText);
     const formattedOptionsText = optionsText.map(opt => formatImageFileNames(opt));
     const formattedAnswerText = formatImageFileNames(answerText);
     const formattedExplanationText = formatImageFileNames(explanationText);
-
-    checkIfQuestionExists(formattedQuestionText, isMCQ).then(exists => {
-        if (exists) return displayAlert("This question already exists.");
-
-        const formData = new FormData();
-        if (formattedQuestionText.trim()) formData.append('question', formattedQuestionText);
-        if (isMCQ) {
-            if (formattedOptionsText.length) formData.append('options', JSON.stringify(formattedOptionsText));
-            if (formattedAnswerText.trim()) formData.append('correctAnswer', formattedAnswerText);
-            formData.append('section', currentSubject);
-        } else {
-            if (formattedExplanationText.trim()) formData.append('explanation', formattedExplanationText);
-            formData.append('subject', currentSubject);
-            formData.append('section', currentSection);
-        }
-
-        attachMatchedImagesToFormData(formData);
-
-        const endpoint = isMCQ ? '/questions.json' : '/ab.json';
-        fetch(`http://localhost:3001${endpoint}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            resetAddForm();
-            document.getElementById(isMCQ ? "add-question-form-mcq" : "add-question-form-ab").style.display = "none";
-            addButton.click(); // Hide form after submission
-        })
-        .catch(error => {
-            console.error('Error:', error);
+  
+    const referencedImages = new Set();
+    function collectReferencedImages(text) {
+      if (text && typeof text === 'string') {
+        (text.match(/\(([^)]+)\)/g) || []).forEach(placeholder => {
+          const imageName = placeholder.replace(/[()]/g, '');
+          if (imageMap.has(imageName)) {
+            referencedImages.add(imageName);
+          }
         });
+      }
+    }
+  
+    collectReferencedImages(questionText);
+    optionsText.forEach(opt => collectReferencedImages(opt));
+    collectReferencedImages(answerText);
+    collectReferencedImages(explanationText);
+  
+    const formData = new FormData();
+    formData.append('question', formattedQuestionText);
+  
+    if (isMCQ) {
+      formData.append('options', JSON.stringify(formattedOptionsText));
+      formData.append('correctAnswer', formattedAnswerText);
+      formData.append('section', currentSubject);
+    } else {
+      formData.append('explanation', formattedExplanationText);
+      formData.append('subject', currentSubject);
+      formData.append('section', currentSection);
+    }
+  
+    imageFiles.forEach(file => {
+      if (referencedImages.has(file.name.replace(/\s+/g, '_'))) {
+        formData.append('images[]', file);
+      }
     });
-}
+  
+    // Determine the endpoint based on the question type
+    const endpoint = isMCQ ? 'questions.json' : 'ab.json';
+  
+    async function fetchDataFromUrls(urls) {
+      for (const baseUrl of urls) {
+        try {
+          const response = await fetch(`${baseUrl}${endpoint}`, { method: 'GET', mode: 'cors' });
+          if (!response.ok) {
+            console.warn(`Failed to fetch from ${baseUrl}${endpoint}. Status: ${response.status}`);
+            continue;
+          }
+          return response.json();
+        } catch (error) {
+          console.error(`Error fetching from ${baseUrl}${endpoint}:`, error);
+        }
+      }
+      throw new Error('Failed to fetch data from all provided URLs.');
+    }
+  
+    async function postDataToUrl(url, formData) {
+      try {
+        const response = await fetch(`${url}${endpoint}`, { method: 'POST', body: formData, mode: 'cors' });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        addButton.click();
+        return response.json();
+      } catch (error) {
+        throw new Error(`Error posting data: ${error.message}`);
+      }
+    }
+  
+    fetchDataFromUrls(urls)
+      .then(data => {
+        let duplicateFound = false;
+  
+        function checkForDuplicate(existingQuestions) {
+          existingQuestions.forEach(entry => {
+            if (entry.question === formattedQuestionText) {
+              duplicateFound = true;
+            }
+          });
+        }
+  
+        if (!isMCQ) {
+          if (data[currentSubject] && data[currentSubject][currentSection]) {
+            checkForDuplicate(data[currentSubject][currentSection]);
+          }
+        } else {
+          const sectionData = data.sections.find(section => section.section === currentSubject);
+          if (sectionData) {
+            checkForDuplicate(sectionData.questions);
+          }
+        }
+  
+        if (duplicateFound) {
+          displayAlert('Duplicate question found. Please enter a new question.');
+        } else {
+          // POST data to each URL until one succeeds
+          (async function tryPost() {
+            for (const baseUrl of urls) {
+              try {
+                const result = await postDataToUrl(baseUrl, formData);
+                console.log('Success:', result);
+                resetAddForm();
+                document.getElementById(isMCQ ? "add-question-form-mcq" : "add-question-form-ab").style.display = "none";
+                return;
+              } catch (error) {
+                console.error('Error posting data:', error);
+                // Try the next URL
+              }
+            }
+            displayAlert('Failed to save question. Please try again later.');
+          })();
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        displayAlert(`Failed to check existing questions. Error: ${error.message}`);
+      });
+  }
+  
 
-// Event listeners for MCQ form
+
+
+// Event listener for MCQ form
 document.getElementById("save-new-question-mcq").addEventListener("click", () => {
     const questionText = document.getElementById("new-question-text").value;
-    const optionsElements = Array.from(document.querySelectorAll(".new-option-input"));
-    const optionsText = optionsElements.map(input => input.value);
+    const optionsText = Array.from(document.querySelectorAll(".new-option-input")).map(input => input.value);
     const answerText = document.getElementById("new-answer-text").value;
-    const imageFiles = getMCQImageFiles(); // Get the uploaded image files
-
-    if (!validateFormInputs(questionText, optionsText, answerText, "", true)) {
-        return displayAlert("Please fill all required fields with either text or image placeholders.");
-    }
-
+    const imageFiles = getMCQImageFiles();
+    
     saveQuestion({ questionText, optionsText, answerText, isMCQ: true, imageFiles });
 });
 
-// Event listeners for AB form
+// Event listener for AB form
 document.getElementById("save-new-question-ab").addEventListener("click", () => {
     const questionText = document.querySelector(".question-input").value;
     const explanationText = document.querySelector(".edit-explanation-input").value;
-    const imageFiles = getABImageFiles(); // Get the uploaded image files
-
-    if (!validateFormInputs(questionText, [], "", explanationText, false)) {
-        return displayAlert("Please fill all required fields with either text or image placeholders.");
-    }
-
+    const imageFiles = getABImageFiles();
+   
     saveQuestion({ questionText, explanationText, isMCQ: false, imageFiles });
 });
-
-// Check if question exists
-async function checkIfQuestionExists(questionText, isMCQ = false) {
-    try {
-        const response = await fetch(`http://localhost:3001/${currentDataFile}`);
-        if (!response.ok) throw new Error('Network response was not ok.');
-        const data = await response.json();
-        return isMCQ ? 
-            data.sections.some(section => section.questions?.some(q => q.question === questionText.trim())) :
-            Object.values(data).some(section => section.a?.some(q => q.question === questionText.trim()) || section.b?.some(q => q.question === questionText.trim()));
-    } catch (error) {
-        console.error('Error checking if question exists:', error);
-        return false;
-    }
-}
 
 // Function to display alert messages
 function displayAlert(message) {
     alert(message); // Replace with a custom alert implementation if needed
 }
 
+
+
 // Function to reset the form
 function resetAddForm() {
-    // Clear text inputs and set min-height
-    ['#new-question-text', '.new-option-input', '#new-answer-text', '.question-input', '.edit-explanation-input']
-        .forEach(selector => {
-            document.querySelectorAll(selector).forEach(el => {
-                el.value = '';
-                el.style.minHeight = '50px';
-            });
+    // Reset text inputs
+    const textInputSelectors = [
+        '#new-question-text',
+        '.new-option-input',
+        '#new-answer-text',
+        '.question-input',
+        '.edit-explanation-input'
+    ];
+    textInputSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            el.value = '';
+            el.style.Height = '50px';
         });
+    });
 
-    // Clear image uploads and hide placeholder messages
-    ['#upload-question-images', '#upload-ab-images']
-        .forEach(selector => document.querySelector(selector).value = '');
+    // Clear file inputs
+    const fileInputSelectors = ['#upload-question-images', '#upload-ab-images'];
+    fileInputSelectors.forEach(selector => {
+        const fileInput = document.querySelector(selector);
+        if (fileInput) fileInput.value = '';
+    });
+
+    // Hide placeholder messages
+    const messageDivSelectors = ['#image-placeholder-message', '#image-placeholder-message-ab'];
+    messageDivSelectors.forEach(selector => {
+        const messageDiv = document.querySelector(selector);
+        if (messageDiv) messageDiv.style.display = 'none';
+    });
+
+    // Reset global variables
+    imageFiles = [];
+    image = [];
+    typingComplete = false;
+    existingMessage = '';
+    currentActivePlaceholder = null;
+    buttonsEnabled = false;
+
+    // Clear message text
     
-    ['#image-placeholder-message', '#image-placeholder-message-ab']
-        .forEach(selector => document.querySelector(selector).style.display = 'none');
+    // Clear image maps and placeholders
+    imageMap.clear();
+    uploadedImageNames.clear();
+
+    // Clear active image container
+    if (activeImageContainer) {
+        activeImageContainer.innerHTML = '';
+        activeImageContainer = null;
+    }
+
+    // Remove highlighted placeholder buttons
+    document.querySelectorAll('.highlighted-placeholder').forEach(button => button.remove());
+
+    // Clear and hide message div
+    const messageDiv = document.querySelector('#message-div');
+    if (messageDiv) {
+        messageDiv.innerHTML = '';
+        messageDiv.style.display = 'none';
+    }
+
+    // Clear textarea
+    const textarea = document.querySelector('#textarea-selector');
+    if (textarea) textarea.value = '';
+
+    // Reset file input
+    const fileInput = document.querySelector('#file-input');
+    if (fileInput) fileInput.value = '';
+
+  
+
+    console.log('Form reset complete');
 }
 
 
-// Initialize image file handlers
-const getMCQImageFiles = handleImageUploads('#new-question-text', '#upload-question-images', '#image-placeholder-message');
-const getABImageFiles = handleImageUploads('.question-input', '#upload-ab-images', '#image-placeholder-message-ab');
-
-
-
-
-function reloadQuiz() {
-    window.parent.postMessage("reloadQuiz", "*");
-
-    setTimeout(() => {
-        performSearch();
-        setTimeout(() => {
-            performSearch();
-        }, 100);
-    }, 200);
-}
+  
 
 modifyButton.addEventListener("click", function () {
     if (addButton.textContent === "Cancel Add") {
@@ -1076,41 +1741,6 @@ function setActive(element, dataFile) {
 
 
 
-async function deleteQuestion(button, isAbJson = false) {
-    const questionElement = button.parentElement;
-    const questionText = questionElement.querySelector('h5')?.textContent?.trim() || null;
-    const subject = questionElement.querySelector('h4')?.textContent?.trim() || null;
-    const sectionName = questionElement.dataset.section;
-    const questionIndex = questionElement.dataset.questionIndex;
-
-    if (!confirm("Are you sure you want to delete this question?")) return;
-
-    const data = isAbJson 
-        ? { subject, section: sectionName, questionIndex }
-        : { question: questionText, section: sectionName };
-
-    const endpoint = isAbJson ? 'http://localhost:3001/ab.json' : 'http://localhost:3001/questions.json';
-
-    try {
-        await fetch(endpoint, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
-        questionElement.remove();
-        isModifyActive = false;
-        reloadQuiz();
-       
-    } catch (error) {
-        console.error("Error deleting question:", error);
-    }
-}
-
-
-
-
-
-
 
 
 function applyAutoResize(textarea) {
@@ -1149,11 +1779,30 @@ const observer = new MutationObserver((mutations) => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
+function stopTyping() {
+    // Clear all typing intervals
+    currentTypingElements.forEach(({ typingInterval }) => clearInterval(typingInterval));
+    currentTypingElements = [];  // Reset the array to ensure no elements are typing
+}
+
+// Assuming you have a function to start typing, you should call stopTyping first to ensure no overlap
+function startTyping() {
+    stopTyping();  // Ensure no typing is active before starting
+    // ... your typing logic here
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const editButtons = document.querySelectorAll(".edit-button");
+
     editButtons.forEach(button => {
-        button.addEventListener("click", editQuestion);
+        button.addEventListener("click", function() {
+            stopTyping();  // Stop typing when edit button is clicked
+            editQuestion(); // Call the edit question function
+        });
     });
+
+    // Ensure typing is stopped on load if needed
+    stopTyping();
 });
 
 addButton.disabled = true;
@@ -1271,6 +1920,7 @@ function resetEverything() {
     subjectSelection.style.display = "none";
     subjectDropdown.selectedIndex = 0;
     subjectDropdown.disabled = true;
+    resetUploadedImages();
 
     // Reset buttons
     const addButton = document.getElementById("add-button");
@@ -1314,43 +1964,48 @@ function resetEverything() {
 
     // Reset the navigation bar
     resetNavBar();
-
+    typingInterval = null;
+    
     // Reset the typing effects
     currentTypingElements.forEach(({ typingInterval }) => clearInterval(typingInterval));
     currentTypingElements = [];
-
+    
     // Hide buttons
     toggleButtons(false);
     buttonsVisible = false;
+
+    // Reload the page
+    window.location.reload();
 }
 
 
 
-  function typeText(element, text, speed, callback) {
+
+// Define the typeText function
+function typeText(element, text, speed, callback) {
     let i = 0;
     let interval = null;
 
     // Function to type out text without breaking HTML tags
     function typeChar() {
-        // Don't update if we're in the middle of an HTML tag
         if (text[i] === '<') {
-            // Find the closing tag
+            // Find the end of the tag
             const closeIndex = text.indexOf('>', i);
             if (closeIndex !== -1) {
-                // Skip over the entire tag before typing more content
                 i = closeIndex + 1;
             }
         }
 
-        // Safely set the element's content while avoiding incomplete HTML tags
+        // Safely update innerHTML
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = text.substring(0, i);
         const safeText = tempDiv.innerHTML;
 
+        // Update element with safe text
         element.innerHTML = safeText;
         i++;
 
-        // Stop when we've typed out the full content
+        // Stop typing when text is fully typed
         if (i > text.length) {
             clearInterval(interval);
             element.typingInterval = null;
@@ -1358,16 +2013,23 @@ function resetEverything() {
         }
     }
 
-    // Clear any existing interval for this element
+    // Clear any existing typing interval
     if (element.typingInterval) {
         clearInterval(element.typingInterval);
         element.typingInterval = null;
     }
 
-    // Start typing
+    // Start typing interval
     interval = setInterval(typeChar, speed);
-
-    // Store the interval reference in the element
     element.typingInterval = interval;
+
+    // Return a function to stop typing
+    return () => {
+        if (element.typingInterval) {
+            clearInterval(element.typingInterval);
+            element.typingInterval = null;
+        }
+    };
 }
+
 

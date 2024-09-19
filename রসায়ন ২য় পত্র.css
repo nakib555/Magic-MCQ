@@ -70,7 +70,7 @@ border: 0.5px solid #3f4868;
 font-size: 12.5px;
 cursor: pointer;
 color: #fff;
-opactiy: 0.5;
+opacity: 0.5;
 background: linear-gradient(to right, #ea517c, #b478f1);
 }
 
@@ -90,7 +90,7 @@ border-radius: 10px;
 overflow: hidden;
 border: 0.5px solid #3f4868;
 cursor: pointer;
-opactiy: 0.5;
+opacity: 0.5;
 background: linear-gradient(to right, #ea517c, #b478f1);
 }
 
@@ -243,7 +243,7 @@ background-color: #f1e9e9; /* Change to your desired color */
 }
 
 /* Styling for Explanation Boxes */
-.a-explanation,,
+.a-explanation,
 .b-explanation {
 display: flex;
 flex-direction: column;
