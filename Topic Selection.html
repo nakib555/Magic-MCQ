@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="Topic Selection.css" />
+    <title>Quiz Start Screen</title>
+</head>
+<body>
+    <div class="start-screen">
+        <div class="container">
+            <div class="heading-floating-edit">
+                <div class="floating-edit">
+                    <div class="floating-close" onclick="closeQuiz()">
+                        <div class="close"></div>
+                    </div>
+                </div>
+                <h1 class="heading" id="start-screen-heading">Multi Topic Selection</h1>
+            </div>
+      
+            <div class="subject-selection">
+                <div class="subject-dropdown" id="subject-dropdown" aria-haspopup="true" aria-expanded="false">Select Subjects</div>
+                <div class="dropdown-options" id="dropdown-options" style="display: none;"></div>
+            </div>
+            <div id="selected-subjects" class="selected-subjects" style="display: none;"></div>
+
+            <script>    
+                const dropdownOptions = document.getElementById('dropdown-options');
+                const subjectDropdown = document.getElementById('subject-dropdown');
+                const selectedSubjectsDiv = document.getElementById('selected-subjects');
+                let allSelected = false;
+                let lastSelectedSubjects = [];
+                
+                subjectDropdown.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = dropdownOptions.style.display === 'block';
+                    dropdownOptions.style.display = isOpen ? 'none' : 'block';
+                    subjectDropdown.setAttribute('aria-expanded', !isOpen);
+                    if (isOpen) {
+                        updateSelectedSubjects();
+                    }
+                });
+                
+                document.addEventListener('click', (event) => {
+                    if (!dropdownOptions.contains(event.target) && event.target !== subjectDropdown) {
+                        dropdownOptions.style.display = 'none';
+                        subjectDropdown.setAttribute('aria-expanded', 'false');
+                        updateSelectedSubjects();
+                    }
+                });
+                
+                window.addEventListener("message", ({ data: { subjectNames } = {} }) => {
+                    if (subjectNames && Array.isArray(subjectNames)) {
+                        const allOptionHTML = `
+                            <div class="dropdown-option" id="select-all" tabindex="0">
+                                <div class="wrap-check-58">
+                                    <div class="round">
+                                        <input type="checkbox" id="checkbox-all" />
+                                        <label for="checkbox-all"></label>
+                                    </div>
+                                </div>
+                                <span class="subjectname">All</span>
+                            </div>
+                        `;
+                
+                        dropdownOptions.innerHTML = allOptionHTML + subjectNames.map((subject, index) => `
+                            <div class="dropdown-option" data-index="${index}" tabindex="0">
+                                <div class="wrap-check-58">
+                                    <div class="round">
+                                        <input type="checkbox" id="checkbox-${index}" />
+                                        <label for="checkbox-${index}"></label>
+                                    </div>
+                                </div>
+                                <span class="subjectname">${subject}</span>
+                            </div>
+                        `).join('');
+                
+                        const allOption = document.getElementById('select-all');
+                        const allCheckbox = document.getElementById('checkbox-all');
+                
+                        allOption.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            allSelected = !allSelected;
+                            allCheckbox.checked = allSelected;
+                            dropdownOptions.querySelectorAll('.dropdown-option input[type="checkbox"]').forEach(checkbox => {
+                                if (checkbox !== allCheckbox) {
+                                    checkbox.checked = allSelected;
+                                }
+                            });
+                        });
+                
+                        dropdownOptions.querySelectorAll('.dropdown-option:not(#select-all)').forEach(option => {
+                            option.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                const checkbox = option.querySelector('input[type="checkbox"]');
+                                checkbox.checked = !checkbox.checked;
+                                if (!checkbox.checked) {
+                                    allCheckbox.checked = false;
+                                    allSelected = false;
+                                }
+                            });
+                
+                            option.addEventListener('keypress', (e) => {
+                                if (e.key === 'Enter') {
+                                    option.click();
+                                }
+                            });
+                        });
+                    }
+                });
+                let currentTypingElements = [];
+                function updateSelectedSubjects() {
+                    const checkedBoxes = dropdownOptions.querySelectorAll('input[type="checkbox"]:checked:not(#checkbox-all)');
+                    const selectedSubjects = Array.from(checkedBoxes).map(checkbox => {
+                        return checkbox.closest('.dropdown-option').querySelector('.subjectname').textContent;
+                    });
+                    
+                    // Clear ongoing typing before updating
+                    currentTypingElements.forEach(({ typingInterval }) => clearInterval(typingInterval));
+                    currentTypingElements = [];
+                    
+                    // Update last selected subjects
+                    if (!arraysEqual(selectedSubjects, lastSelectedSubjects)) {
+                        lastSelectedSubjects = selectedSubjects;
+                
+                        const count = selectedSubjects.length;
+                        const label = count === 1 ? `${count} subject selected` : `${count} subjects selected`;
+                        subjectDropdown.textContent = count > 0 ? label : 'Select Subjects';
+                
+                        // Clear previous subjects and start fresh typing animation
+                        selectedSubjectsDiv.innerHTML = "";
+                        if (count > 0) {
+                            selectedSubjectsDiv.style.display = 'block';
+                            typeNextSubject(0, selectedSubjects);
+                        } else {
+                            selectedSubjectsDiv.style.display = 'none';
+                        }
+                    }
+                }
+                
+                
+                function typeText(element, text, speed, callback) {
+                    let i = 0;
+                    let interval = null;
+                
+                    // Function to type out text without breaking HTML tags
+                    function typeChar() {
+                        if (text[i] === '<') {
+                            // Find the end of the tag
+                            const closeIndex = text.indexOf('>', i);
+                            if (closeIndex !== -1) {
+                                i = closeIndex + 1;
+                            }
+                        }
+                
+                        // Safely update innerHTML
+                        const tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = text.substring(0, i);
+                        const safeText = tempDiv.innerHTML;
+                
+                        // Update element with safe text
+                        element.innerHTML = safeText;
+                        i++;
+                
+                        // Stop typing when text is fully typed
+                        if (i > text.length) {
+                            clearInterval(interval);
+                            element.typingInterval = null;
+                            if (callback) callback();
+                        }
+                    }
+                
+                    // Clear any existing typing interval
+                    if (element.typingInterval) {
+                        clearInterval(element.typingInterval);
+                        element.typingInterval = null;
+                    }
+                
+                    // Start typing interval
+                    interval = setInterval(typeChar, speed);
+                    element.typingInterval = interval;
+                
+                    // Return a function to stop typing
+                    return () => {
+                        if (element.typingInterval) {
+                            clearInterval(element.typingInterval);
+                            element.typingInterval = null;
+                        }
+                    };
+                }
+                
+                function typeNextSubject(index, selectedSubjects) {
+                    if (index < selectedSubjects.length) {
+                        const subject = selectedSubjects[index];
+                        const span = document.createElement('span');
+                        span.classList.add('highlighted-subject');
+                        selectedSubjectsDiv.appendChild(span);
+                        
+                        typeText(span, subject, 30, () => {
+                            setTimeout(() => typeNextSubject(index + 1, selectedSubjects), 0);
+                        });
+                    }
+                }
+                
+                
+                function arraysEqual(arr1, arr2) {
+                    return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
+                }
+            </script>
+
+            <div class="options">
+                <div class="time-limit">
+                    <label for="time-limit" id="time-limit-label">Time Limit (seconds)</label>
+                    <input type="number" id="time-limit" value="30" min="30" />
+                </div>
+                <div class="question-limit">
+                    <label for="question-limit" id="question-limit-label">Question Limit</label>
+                    <input type="number" id="question-limit" value="30" min="30" />
+                </div>
+            </div>
+            <p class="error-message hide" id="error-message"></p>
+            <button class="btn start" id="start-button">কুইজ শুরু করুন</button>
+        </div>
+
+        <div class="quiz hide" id="quiz-section">
+            <div class="u-container">
+                <div class="f" id="quiz-heading">
+                    <span class="quiz-heading" id="fixed"></span>
+                </div>
+
+                <div class="number-progress" id="fixed">
+                    <div class="number-container" id="overlap-adjust">
+                        <div class="number">
+                            প্রশ্ন <span class="current"></span> / <span class="total"></span>
+                        </div>
+                    </div>
+                    <div class="progress" id="overlap-adjust">
+                        <div class="progress-bar"></div>
+                        <span class="progress-text"></span>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer"></div>
+                    </div>
+                </div>
+                <div class="question" id="relative"></div>
+            </div>
+            <div class="answer-wrapper" id="answer-wrapper"></div>
+
+            <div class="button-wrapper">
+                <button class="btn previous" disabled>Previous</button>
+                <button class="btn stop">Stop</button>
+                <button class="btn next">Next</button>
+            </div>
+        </div>
+
+        <div class="end-screen hide">
+            <div class="container">
+                <h1 class="heading" id="end-screen-heading"></h1>
+                <div class="score">
+                    <span class="score-text">score</span>
+                    <div>
+                        <span class="final-score">0</span> /
+                        <span class="total-score"></span>
+                    </div>
+                </div>
+                <div class="answer-status">
+                    <div>Correct: <span class="correct-count">0</span></div>
+                    <br />
+                    <div>Wrong: <span class="wrong-count">0</span></div>
+                    <br />
+                    <div>Unanswered: <span class="not-answered-count">0</span></div>
+                </div>
+                <button class="btn restart">পুনরায় শুরু করুন</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

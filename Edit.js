@@ -1,20 +1,20 @@
 // Edit.js
-let currentSubject = null;
-let currentDataFile = null;
-let currentSection = null;
-let addButtonClickedCount = 0;
-let editedQuestion = null;
-let editedOptions = null;
-let editedAnswer = null;
-let editedSection = null;
-let editingQuestionId = null;
-let searchResultsOpen = false;
-let searchTimeout = null;
-let isModifyActive = false;
-let editsudject = null;
-let editedSectionab = null;
-let imageReferences = [];
-let formData = new FormData(); 
+let currentSubject = null,
+    currentDataFile = null,
+    currentSection = null,
+    addButtonClickedCount = 0,
+    editedQuestion = null,
+    editedOptions = null,
+    editedAnswer = null,
+    editedSection = null,
+    editingQuestionId = null,
+    searchResultsOpen = false,
+    searchTimeout = null,
+    isModifyActive = false,
+    editsudject = null,
+    editedSectionab = null,
+    imageReferences = [],
+    formData = new FormData();
 const addButton = document.getElementById("add-button");
 const modifyButton = document.querySelector(".Modify");
 const searchButton = document.querySelector(".btn-search");
@@ -24,9 +24,10 @@ const clearButton = document.querySelector(".btn-clear");
 const searchBox = document.querySelector(".wrap-input-17");
 const subjectDropdown = document.getElementById("subject-dropdown");
 const urls = [
-    'http://localhost:5500/',
+    'http://localhost:8080/',
     'http://localhost:3001/',
-    'http://localhost:8080/'
+    'http://localhost:5500/'
+   
   ];
   
 searchResults.style.display = "none";
@@ -374,18 +375,19 @@ function processAndDisplayResults(data, searchTerm, isAbJson = false, section = 
 
 
 function processTextWithImages(text, isEditMode = false) {
+    if (typeof text !== 'string') {
+        text = String(text); // Convert to string if it's not already
+    }
+
     if (isEditMode) {
-        // In edit mode, return the original text with image links
         return text.replace(/<div class="image-container"><img src="([^"]+)"[^>]+><\/div>/g, '($1)');
     }
 
-    // For display mode, replace image links with image elements
     return text.replace(/\(image\/[^\)]+\)/g, match => {
-        const imgSrc = match.slice(1, -1); // Remove surrounding parentheses
+        const imgSrc = match.slice(1, -1);
         return `<div class="image-container"><img src="${imgSrc}" class="image-zoom" alt="Image"></div>`;
     });
 }
-
 
   async function deleteQuestion(button, isAbJson = false) {
     const questionElement = button.parentElement;

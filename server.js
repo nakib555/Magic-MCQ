@@ -7,8 +7,8 @@ const multer = require('multer');
 const EventEmitter = require('events');
 
 const app = express();
-const port1 = 3001; // First port
-const port2 = 8080; // Second port
+const port1 = 8080;
+const port2 = 3001;
 const port3 = 5500; // Third port
 
 // Enable CORS for all origins
@@ -24,8 +24,11 @@ app.use((_req, res, next) => {
 });
 
 // Serve static files
-app.use(express.static(path.join(__dirname, '/')));
+app.use(express.static(__dirname));
 
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 // Create an EventEmitter for SSE
 const abChangeEmitter = new EventEmitter();
 
@@ -99,10 +102,7 @@ const normalizeLineBreaks = (text) => text.replace(/(\r\n|\r|\\n)/g, '\n');
 
 app.use(express.json()); // To parse JSON request bodies
 
-app.post('/start-server', (req, res) => {
-  console.log('Server start request received!');
-  res.send('Server starting...'); 
-});
+
 
 // POST route for handling image uploads
 app.post('/upload', upload.array('images[]'), (req, res) => {
@@ -170,7 +170,7 @@ app.post(`/${endpoint}`, upload.array('images[]'), async (req, res) => {
 
       // Restore line breaks in parsedOptions
       parsedOptions = parsedOptions.map(option => option.replace(new RegExp(placeholder, 'g'), '\n'));
-
+      
       const sectionIndex = data.sections.findIndex(s => s.section === section);
       if (sectionIndex === -1) {
         data.sections.push({ section, questions: [] });
@@ -348,6 +348,8 @@ app.post(`/${endpoint}`, upload.array('images[]'), async (req, res) => {
 });
 
 // Start servers on all ports
+
+
 app.listen(port1, () => {
   console.log(`Server running on port ${port1}`);
 });

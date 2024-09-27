@@ -77,13 +77,16 @@ input[type="number"] {
 .u-container {
   text-align: center;
   position: fixed;
-  top: 0;
-  padding: 2px;
+  top: -10px;
+  padding: 1px;
   background-color: #fff;
   z-index: 1000;
   box-sizing: border-box;
   position: relative;
+  margin-bottom: -25px;
 }
+
+
 
 /* Number Progress */
 .number-progress {
@@ -293,7 +296,7 @@ input[type="number"] {
 /* Quiz Heading */
 .quiz-heading {
   color: #000;
-  font-size: 25px;
+  font-size: 20px;
   margin-top: 25px;
   text-align: center;
   margin: auto;
@@ -303,7 +306,7 @@ input[type="number"] {
     -1px 1px 0 #a8c2a8,
     1px 1px 0 #b478f1;
   text-align: center;
-  top: 20px;
+  top: 11px;
   left: 1px;
   right: 2px;
   width: 90%;

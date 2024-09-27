@@ -1,5 +1,5 @@
 let questions = [], currentQuestion = 0, score = 0, timeRemaining = 0, timerInterval, selectedAnswer = null, questionLimit = 15, typingInterval, autoNextTimeout, shuffledQuestions = [], data = null;
-const urls = ['http://localhost:5500/', 'http://localhost:3001/', 'http://localhost:8080/'];
+const urls = [ 'http://localhost:8080/', 'http://localhost:3001/', 'http://localhost:5500/'];
 const startScreenHeading = document.getElementById("start-screen-heading");
 const startScreen = document.querySelector(".start-screen");
 const quizScreen = document.querySelector(".quiz");
@@ -93,7 +93,7 @@ function validateInputs() {
 
   if (isNaN(questionLimitValue) || isNaN(timeLimitValue)) {
     errorMessageText = "Please enter valid question and time limits.";
-  } else if (questionLimitValue < 30 || timeLimitValue < 30) {
+  } else if (questionLimitValue < 0 || timeLimitValue < 0) {
     errorMessageText = "Question and time limit must be at least 30.";
   } else if (questionLimitValue > maxQuestions || timeLimitValue > maxQuestions) {
     errorMessageText = `Question and time limits cannot exceed ${maxQuestions}.`;
@@ -113,7 +113,7 @@ function startQuiz() {
   const timeLimitValue = parseInt(timeLimitInput.value);
   startButton.disabled = false;
 
-  if (questionLimitValue < 30 || timeLimitValue < 30) {
+  if (questionLimitValue < 0 || timeLimitValue < 0) {
     errorMessage.textContent = "Question limit and time limit must be at least 30.";
     errorMessage.classList.remove("hide");
     return;
@@ -149,18 +149,19 @@ function startQuiz() {
   }
 
   shuffledQuestions.forEach((question) => {
-    question.answered = false;
+    if (question) { // Check if question is defined
+      question.answered = false;
+    }
   });
-
   startScreen.classList.add("hide");
   quizScreen.classList.remove("hide");
   showQuiz();
 
-  typeText(quizHeading, subjectName, 30);
+  // Remove the direct text content setting
+  // quizHeading.textContent = subjectName;
 
-  typeText(previousButton, "Previous", 30);
-  typeText(stopButton, "Stop", 30);
-  typeText(nextButton, "Next", 30);
+  // Use typeText for the quiz heading
+  typeText(quizHeading, subjectName, 30);
 
   startTimer();
   displayQuestion();
@@ -210,17 +211,71 @@ function selectQuestions(allQuestions, limit, subject) {
   saveQuestionHistory();
   return shuffleArray(selectedQuestions);
 }
+  function convertNewlinesToHtml(text) {
+    return text.replace(/\n/g, '<br>');
+}
+function processTextWithImages(text, isEditMode = false) {
+  if (isEditMode) {
+      // In edit mode, return the original text with image links
+      return text.replace(/<div class="image-container"><img src="([^"]+)"[^>]+><\/div>/g, '($1)');
+  }
 
+  // For display mode, replace image links with image elements
+  return text.replace(/\(image\/[^\)]+\)/g, match => {
+      const imgSrc = match.slice(1, -1); // Remove surrounding parentheses
+      return `<div><img src="${imgSrc}" style="margin: 10px 0; height: auto; max-width: 100%;" alt="Image"></div>`;
+  });
+}
 function displayQuestion() {
+  if (!shuffledQuestions || currentQuestion < 0 || currentQuestion >= shuffledQuestions.length) {
+    showError("Invalid question index or question array.");
+    return;
+  }
+
   const questionData = shuffledQuestions[currentQuestion];
+  clearPreviousContent();
 
+  // Process the question text
+  const content = `
+  <h5>${convertNewlinesToHtml(processTextWithImages(questionData.question))}</h5>
+`;
+
+  // Clear the questionElement and start typing the question
+  questionElement.innerHTML = content; // Clear previous text
+
+  // Call the typing function with a callback to handle after typing is complete
+  
+    answerWrapperElement.style.opacity = "1";
+    answerWrapperElement.style.animation = "fadeInUp 1s";
+
+    displayAnswers(questionData);
+    
+    previousButton.disabled = currentQuestion === 0;
+
+    updateQuestionCounter();
+  
+}
+
+
+function showError(_message) {
+  // Display error message to the user in the UI
+}
+
+function clearPreviousContent() {
   answerWrapperElement.innerHTML = "";
-  questionElement.textContent = "";
+  questionElement.innerHTML = "";
+  answerWrapperElement.style.opacity = "0";
+}
 
-  answerWrapperElement.style.animation = "fadeInUp 1s";
+function updateQuestionCounter() {
+  document.querySelector(".current").innerHTML = currentQuestion + 1;
+  document.querySelector(".total").innerHTML = questionLimit;
+}
 
-  displayTextAndImage(questionElement, questionData.question);
 
+
+
+function displayAnswers(questionData) {
   if (questionData.answered) {
     questionData.options.forEach((option) => {
       const answerButton = document.createElement("div");
@@ -240,7 +295,7 @@ function displayQuestion() {
   } else {
     const shuffledOptions = shuffleArray(questionData.options);
 
-    shuffledOptions.forEach((option, index) => {
+    shuffledOptions.forEach((option) => {
       const answerButton = document.createElement("div");
       answerButton.classList.add("answer");
 
@@ -250,38 +305,35 @@ function displayQuestion() {
       answerWrapperElement.appendChild(answerButton);
     });
   }
-
-  const currentQuestionNumber = document.querySelector(".current");
-  currentQuestionNumber.textContent = currentQuestion + 1;
-  const totalQuestionNumber = document.querySelector(".total");
-  totalQuestionNumber.textContent = questionLimit;
-
-  previousButton.disabled = currentQuestion === 0;
 }
 
 function displayTextAndImage(element, content) {
-  // Ensure the container has a center alignment
   if (typeof content === 'string') {
-    const parts = content.split(/(\(image\/[^)]+\))/); // Split text and image link
-    parts.forEach(part => {
-      if (part.startsWith('(image/') && part.endsWith(')')) {
-        // Handle image link
-        const imgElement = document.createElement("img");
-        imgElement.src = part.slice(1, -1); // Remove parentheses around image link
-        imgElement.alt = "Image"; // Add descriptive alt text if possible
-        imgElement.style.maxWidth = '30vw'; // Ensure image scales appropriately
-        imgElement.style.margin = '5px auto'; // Apply margin
-        element.appendChild(imgElement);
-      } else if (part.trim() !== '') {
-        // Handle text part and replace '\n' with <br>
-        const textWithBreaks = part.replace(/\n/g, '<br>');
-        const divElement = document.createElement("div");
-        divElement.innerHTML = textWithBreaks;
-        element.appendChild(divElement);
-      }
-    });
+    if (content.trim().startsWith('<') && content.trim().endsWith('>')) {
+      // If content is HTML, set it directly
+      element.innerHTML = content;
+    } else {
+      // If it's plain text, split it and handle images
+      const parts = content.split(/(\(image\/[^)]+\))/);
+      
+      parts.forEach(part => {
+        if (part.startsWith('(image/') && part.endsWith(')')) {
+          const imgElement = document.createElement("img");
+          imgElement.src = part.slice(1, -1); // Remove parentheses
+          imgElement.alt = "Quiz image";
+          imgElement.style.maxWidth = '100%';
+          imgElement.style.height = 'auto';
+          imgElement.style.margin = '10px 0';
+          element.appendChild(imgElement);
+        } else if (part.trim() !== '') {
+          const textWithBreaks = part.replace(/\n/g, '<br>');
+          const divElement = document.createElement("div");
+          divElement.innerHTML = textWithBreaks;
+          element.appendChild(divElement);
+        }
+      });
+    }
   } else if (typeof content === 'object' && content !== null) {
-    // Handle object with both text and image fields
     if (content.text) {
       const textWithBreaks = content.text.replace(/\n/g, '<br>');
       const textNode = document.createElement("div");
@@ -291,16 +343,14 @@ function displayTextAndImage(element, content) {
     if (content.image) {
       const imgElement = document.createElement("img");
       imgElement.src = content.image;
-      imgElement.alt = "Image"; // Add descriptive alt text if possible
-      imgElement.style.maxWidth = '30vw'; // Ensure image scales appropriately
-      imgElement.style.margin = '5px auto'; // Apply margin
+      imgElement.alt = "Quiz image";
+      imgElement.style.maxWidth = '100%';
+      imgElement.style.height = 'auto';
+      imgElement.style.margin = '10px 0';
       element.appendChild(imgElement);
     }
-  } else {
-    console.error('Unsupported content type');
   }
 }
-
 
 
 function selectAnswer(answerButton, selectedOption) {
@@ -340,26 +390,43 @@ function selectAnswer(answerButton, selectedOption) {
 }
 
 function isCorrectAnswer(option, correctAnswer) {
+  // Helper function to strip HTML tags and trim the string
+  const stripHTML = (str) => str.replace(/<[^>]*>/g, '').trim();
+
+  // If the correctAnswer is an array, check if any stripped version of the option matches any stripped version of the array elements
   if (Array.isArray(correctAnswer)) {
-    return correctAnswer.includes(option);
+    return correctAnswer.some(answer => stripHTML(option) === stripHTML(answer));
   }
-  
+
+  // If correctAnswer is a string, compare the stripped versions of the option and correctAnswer
   if (typeof correctAnswer === 'string') {
-    return option === correctAnswer;
+    return stripHTML(option) === stripHTML(correctAnswer);
   }
-  
+
+  // If correctAnswer is an object, handle text and image properties
   if (typeof correctAnswer === 'object' && correctAnswer !== null) {
+    const strippedOption = stripHTML(option);
+
+    // Check if the object has both text and image properties
     if (correctAnswer.text && correctAnswer.image) {
-      return option.includes(correctAnswer.text) && option.includes(correctAnswer.image);
+      return (
+        strippedOption.includes(stripHTML(correctAnswer.text)) &&
+        strippedOption.includes(stripHTML(correctAnswer.image))
+      );
     }
+    
+    // Check if the object has only the text property
     if (correctAnswer.text) {
-      return option.includes(correctAnswer.text);
+      return strippedOption.includes(stripHTML(correctAnswer.text));
     }
+    
+    // Check if the object has only the image property
     if (correctAnswer.image) {
-      return option.includes(correctAnswer.image);
+      return strippedOption.includes(stripHTML(correctAnswer.image));
     }
   }
-  
+
+  // Return false if none of the conditions match
   return false;
 }
 
@@ -381,30 +448,20 @@ function nextQuestion() {
   if (nextUnansweredIndex !== -1) {
     currentQuestion = nextUnansweredIndex;
     selectedAnswer = null;
-
-    answerWrapperElement.style.animation = "fadeInUp 1s";
-
     displayQuestion();
   } else {
-    if (
-      shuffledQuestions
-        .slice(0, questionLimit)
-        .every((question) => question.answered)
-    ) {
+    if (shuffledQuestions.slice(0, questionLimit).every((question) => question.answered)) {
       clearInterval(timerInterval);
       quizScreen.classList.add("hide");
       endScreen.classList.remove("hide");
       endQuiz();
     } else {
       const firstUnansweredIndex = shuffledQuestions.findIndex(
-        (question) => !question.answered,
+        (question) => !question.answered
       );
       if (firstUnansweredIndex !== -1) {
         currentQuestion = firstUnansweredIndex;
         selectedAnswer = null;
-
-        answerWrapperElement.style.animation = "fadeInUp 1s";
-
         displayQuestion();
       }
     }
@@ -415,12 +472,11 @@ function previousQuestion() {
   clearInterval(typingInterval);
   clearTimeout(autoNextTimeout);
 
-  currentQuestion--;
-  selectedAnswer = null;
-
-  answerWrapperElement.style.animation = "fadeInUp 1s";
-
-  displayQuestion();
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    selectedAnswer = null;
+    displayQuestion();
+  }
 }
 
 function stopQuiz() {
@@ -440,45 +496,50 @@ function displayFinalResults() {
 }
 
 function calculateAndDisplayResults() {
-  const correctCount = shuffledQuestions.filter(
-    (q) => q.answered && q.selectedAnswer === q.correctAnswer,
-  ).length;
-  const wrongCount = shuffledQuestions.filter(
-    (q) => q.answered && q.selectedAnswer !== q.correctAnswer,
-  ).length;
+  clearInterval(timerInterval);
+  
+  let correctCount = 0, wrongCount = 0;
+  
+  shuffledQuestions.forEach(q => {
+    if (q.answered) {
+      if (isCorrectAnswer(q.selectedAnswer, q.correctAnswer)) {
+        correctCount++;
+      } else {
+        wrongCount++;
+      }
+    }
+  });
+
   const notAnsweredCount = questionLimit - (correctCount + wrongCount);
 
-  scoreElement.textContent = score;
-  totalScoreElement.textContent = questionLimit;
-  document.querySelector(".correct-count").textContent = correctCount;
-  document.querySelector(".wrong-count").textContent = wrongCount;
-  document.querySelector(".not-answered-count").textContent = notAnsweredCount;
+  // Clear existing content
+  scoreElement.textContent = '';
+  totalScoreElement.textContent = '';
+  document.querySelector(".correct-count").textContent = '';
+  document.querySelector(".wrong-count").textContent = '';
+  document.querySelector(".not-answered-count").textContent = '';
 
-  const elementsToType = [
-    scoreElement,
-    totalScoreElement,
-    document.querySelector(".correct-count"),
-    document.querySelector(".wrong-count"),
-    document.querySelector(".not-answered-count"),
+  // Create an array of results to type out
+  const results = [
+    { element: scoreElement, value: score.toString() },
+    { element: totalScoreElement, value: questionLimit.toString() },
+    { element: document.querySelector(".correct-count"), value: correctCount.toString() },
+    { element: document.querySelector(".wrong-count"), value: wrongCount.toString() },
+    { element: document.querySelector(".not-answered-count"), value: notAnsweredCount.toString() }
   ];
 
-  clearInterval(typingInterval);
-
-  let currentIndex = 0;
-  typingInterval = setInterval(() => {
-    if (currentIndex < elementsToType.length) {
-      typeText(
-        elementsToType[currentIndex],
-        elementsToType[currentIndex].textContent,
-        250,
-      );
-      currentIndex++;
-    } else {
-      clearInterval(typingInterval);
-    }
-  }, 200);
+  // Type out each result sequentially
+  function typeOutResults(index) {
+    if (results && Array.isArray(results) && index < results.length) {
+      typeText(results[index].element, results[index].value, 250).then(() => {
+        typeOutResults(index + 1); 
+      });
+    } 
+  }
+  
+  // Start typing results
+  typeOutResults(0);
 }
-
 function endQuiz() {
   displayFinalResults();
 }
@@ -552,35 +613,82 @@ function closeQuiz() {
 }
 
 function typeText(element, text, speed, callback) {
-  let i = 0;
-  let interval = null; 
+  return new Promise((resolve) => {
+    let i = 0;
 
-  // Clear any existing interval for this element
-  if (element.typingInterval) {
+    if (element.typingInterval) {
       clearInterval(element.typingInterval);
       element.typingInterval = null;
-  }
+    }
 
-  // Clear existing text content
-  element.textContent = "";
+    function insertImage(url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.classList.add('img');
+      img.style.width = "auto";
+      img.style.height = "auto";
+      img.style.marginTop = "7.5px";
+      img.style.marginLeft = "0px";
+      img.onerror = () => console.error(`Failed to load image: ${url}`);
+      element.appendChild(img);
+    }
 
-  interval = setInterval(() => {
-      if (i < text.length) {
-          // Append the character
-          element.textContent += text[i];
-          i++;
-      } else {
-          clearInterval(interval);
-          element.typingInterval = null; 
-          if (callback) {
-              callback();
-          }
+    const interval = setInterval(function () {
+      if (i >= text.length) {
+        clearInterval(interval);
+        if (callback) callback();
+        resolve(); // Resolve the promise here
+        return;
       }
-  }, speed);
-  
-  // Store the interval reference for the element
-  element.typingInterval = interval;  
+
+      const char = text.charAt(i);
+
+      if (char === '\n') {
+        element.appendChild(document.createElement('br'));
+        i++;
+      } else if (char === '(') {
+        let j = i + 1;
+        while (j < text.length && text.charAt(j) !== ')') j++;
+        if (j < text.length) {
+          const content = text.substring(i + 1, j).trim();
+          if (content.match(/\.(gif|jpe?g|tiff?|png|webp|bmp|svg|ico|avif)$/i)) {
+            insertImage(content);
+            i = j + 1;
+          } else {
+            element.innerHTML += `(${content})`;
+            i = j + 1;
+          }
+        } else {
+          element.innerHTML += char;
+          i++;
+        }
+      } else if (char === '<') {
+        let j = i + 1;
+        while (j < text.length && text.charAt(j) !== '>') j++;
+        if (j < text.length) {
+          const tag = text.substring(i, j + 1);
+          element.innerHTML += tag;
+          i = j + 1;
+        } else {
+          element.innerHTML += char;
+          i++;
+        }
+      } else {
+        element.innerHTML += char;
+        i++;
+      }
+    }, speed);
+
+    element.typingInterval = interval;
+  });
 }
+
+
+
+
+
+
+
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -594,6 +702,10 @@ function showQuiz() {
   const quizContainer = document.querySelector(".quiz");
   quizContainer.classList.add("show");
   document.body.style.backgroundColor = "#fff";
+  
+  // Clear the quiz heading before applying the typing effect
+  quizHeading.textContent = "";
+  typeText(quizHeading, subjectName, 30);
 }
 
 function hideQuiz() {
@@ -602,10 +714,14 @@ function hideQuiz() {
   document.body.style.backgroundColor = "";
 }
 
+// ... (previous code remains the same)
+
 function showStartScreen(subjectName) {
   const startScreen = document.querySelector(".start-screen");
-  // Set the text content directly here:
-  startScreenHeading.textContent = subjectName;
+  
+  // Remove the direct text content setting
+  // startScreenHeading.textContent = subjectName;
+  
   // Apply typing effect to the heading:
   typeText(startScreenHeading, subjectName, 30);
 
@@ -646,9 +762,13 @@ window.addEventListener("message", function (event) {
       document.getElementById("end-screen-heading");
     const errorMessage = document.getElementById("error-message");
 
-    // Set the text content initially
-    quizHeading.textContent = subjectName;
-    endScreenHeading.textContent = subjectName;
+    // Remove the direct text content setting
+    // quizHeading.textContent = subjectName;
+    // endScreenHeading.textContent = subjectName;
+
+    // Apply typing effect to headings
+    typeText(quizHeading, subjectName, 30);
+    typeText(endScreenHeading, subjectName, 30);
 
     // Reset input fields
     document.getElementById("time-limit").value = 30; 
@@ -662,16 +782,18 @@ window.addEventListener("message", function (event) {
     typeText(
       document.getElementById("time-limit-label"),
       "মিনিট নির্ধারণ করুন:",
-      30,
+      30
     );
     typeText(
       document.getElementById("question-limit-label"),
       "প্রশ্নের সংখ্যা নির্ধারণ করুন:",
-      30,
+      30
     );
     typeText(document.getElementById('start-button'), 'কুইজ শুরু করুন', 30); 
   }
 });
+
+// ... (rest of the code remains the same)
 
 // Function to clear question history (optional, for testing or user preference)
 function clearQuestionHistory() {

@@ -403,12 +403,12 @@
 	}
   
   .edit-answer-input {
-	padding: 10px 0px 0px;
+	padding: 10px 5px;
 	margin-top: -14.5px;
 	margin-bottom: 5px;
 	height: 50%;
 	width: 75%;
-  }
+	}
   
   .edit-option-input {
 	width: auto;

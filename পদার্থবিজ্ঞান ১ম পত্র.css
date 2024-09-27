@@ -1,6 +1,6 @@
 * {
-     -webkit-tap-highlight-color: transparent;
-  
+  -webkit-tap-highlight-color: transparent;
+
   box-sizing: border-box;
 }
 
@@ -51,50 +51,37 @@ html {
   font-weight: normal;
 }
 
-
-.head-row{
+.head-row {
   position: fixed;
-   justify-content: space-around;
+  justify-content: space-around;
+}
 
-
+.topic-selection,
+.edit {
+  position: fixed;
+  top: 125px;
+  padding: 5px 10px; /* Combined padding for simplicity */
+  border-radius: 10px;
+  /* border: 0.5px solid #3f4868; */
+  font-size: 12.5px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(to right, #ea517c, #b478f1);
 }
 
 .topic-selection {
-  position: fixed;
-  top: 122.5px;
   right: 20px;
-  width: 17.5%; 
+
+  width: auto;
   height: auto;
-  margin-left: 300px;
-  padding-right: 7px;
-  padding-left: 7px;
-  border-radius: 10px;
-  border: 0.5px solid #3f4868;
-  font-size: 12.5px;
-  cursor: pointer;
-  color: #fff;
-  opactiy: 0.5;
-  background: linear-gradient(to right, #ea517c, #b478f1);
+  margin-left: 270px;
 }
 
-
 .edit {
-  position: fixed;
-  top: 122.5px;
   left: 20px;
-  width: auto; 
+  width: auto;
   height: auto;
-  color: #fff;
-  font-size: 12.5px;
-  margin-right: 280px;
-  padding-right: 10px;
-  padding-left: 10px;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 0.5px solid #3f4868;
-  cursor: pointer;
-  opactiy: 0.5;
-  background: linear-gradient(to right, #ea517c, #b478f1);
+  margin-right: 266px;
 }
 
 .subject {
@@ -163,39 +150,88 @@ html {
   transition: transform 0.3s ease;
 }
 
-.collapsible-content,
-.a-content,
-.b-content,
-.aa-content,
-.bb-content {
+.collapsible-content {
   display: none; /* Ensures it's hidden initially */
   flex-direction: column;
+  margin-top: -15px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
 
+.collapsible-content.active {
+  display: flex; /* Shows the content when active */
+}
 
+.collapsible-box {
+  top: -10px;
+  display: flex;
+  align-items: center;
+  background-color: rgba(173, 216, 238, 0.5);
+  padding: 12px;
+  margin-bottom: 12.5px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #000;
+  border: 0.5px solid #cfcfdd;
+  position: relative;
+  cursor: pointer;
+  word-wrap: break-word; /* Allows breaking long words */
+  white-space: pre-wrap; /* Preserves whitespace and wraps text */
+  overflow-wrap: break-word; /* Breaks long words if needed */
+}
+
+.partial-button {
+  background-color: rgba(173, 216, 238, 0.5);
+  border: none;
+  border-radius: 7px;
+  padding: 6px;
+  margin-left: 10px; /* Align to the right */
+  /* margin-right: 0px; */ /* Adjust spacing */
+  cursor: pointer;
+  display: none; /* Initially hidden */
+}
+.partial-button.active {
+  background-color: #f1e9e9; /* Change to your desired color */
+}
+
+.a-content,
+.b-content {
+  display: flex; /* Ensures it's hidden initially */
+  flex-direction: column;
+  margin-top: -10px;
+  margin-bottom: 10px;
   margin-left: 15px;
   margin-right: 15px;
 }
 
-.collapsible-content.active,
 .a-content.active,
-.b-content.active,
-.aa-content.active,
-.bb-content.active {
+.b-content.active {
   display: flex; /* Shows the content when active */
   z-index: 10; /* Higher z-index for active content */
 }
 
-.collapsible-box,
-.a-box,
-.b-box,
-.aa-box,
-.bb-box {
-   display: flex;
+.a-box {
   align-items: center;
   background-color: rgba(173, 216, 238, 0.5);
   padding: 12px;
   top: -17.5px;
-  margin-bottom: 10px;
+  bottom: 19.5px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #000;
+  border: 0.5px solid #cfcfdd;
+  position: relative;
+  cursor: pointer;
+  white-space: normal; /* Allow normal text wrapping */
+  word-break: normal; /* Prevent breaking words unless necessary */
+}
+.b-box {
+  align-items: center;
+  background-color: rgba(173, 216, 238, 0.5);
+  padding: 12px;
+  top: -17.5px;
+  bottom: 19.5px;
   border-radius: 10px;
   text-decoration: none;
   color: #000;
@@ -206,11 +242,8 @@ html {
   word-break: normal; /* Prevent breaking words unless necessary */
 }
 
-.partial-button,
 .a-button,
-.b-button,
-.aa-button,
-.bb-button {
+.b-button {
   background-color: rgba(173, 216, 238, 0.5);
   border: none;
   border-radius: 7px;
@@ -219,37 +252,31 @@ html {
   cursor: pointer;
   display: none; /* Initially hidden */
 }
-.partial-button.active,
+
 .a-button.active,
-.b-button.active,
-.aa-button.active,
-.bb-button.active {
+.b-button.active {
   background-color: #f1e9e9; /* Change to your desired color */
 }
 
 /* Styling for Explanation Boxes */
-.a-explanation,
-.b-explanation,
-.aa-explanation,
-.bb-explanation {
+.a-explanation,,
+.b-explanation {
   display: flex;
   flex-direction: column;
-  margin-top: 0px;
+  margin-top: 160px;
   margin-left: 0px;
   margin-right: 0px;
-  margin-bottom: 0px;
+  margin-bottom: -162.5px;
   padding: 0px;
 }
 
 .a-explanation-box,
-.b-explanation-box,
-.aa-explanation-box,
-.bb-explanation-box {
+.b-explanation-box {
   display: flex;
   align-items: center;
   background-color: rgba(173, 216, 238, 0.5);
   padding: 12px;
-  top: -20px;
+  top: -17.5px;
   margin-bottom: 5px;
   border-radius: 10px;
   text-decoration: none;
@@ -258,14 +285,23 @@ html {
   position: relative;
   cursor: pointer;
   white-space: normal; /* Allow normal text wrapping */
-  word-break: normal; /* Prevent breaking words unless necessary */
+  word-break: normal; /* Prevent breaking words unless 
+  necessary */
+}
+
+.a-explanation-box,
+.b-explanation-box {
+  white-space: pre-wrap; /* Preserve line breaks and formatting */
 }
 
 .a-explanation-box,
 .b-explanation-box,
-.aa-explanation-box,
-.bb-explanation-box {
-  white-space: pre-wrap; /* Preserve line breaks and formatting */
+.a-box,
+.b-box {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
-
+.a-button {
+  margin-left: 10px; /* Align to the right */
+}

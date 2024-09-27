@@ -58,26 +58,33 @@ position: fixed;
 
 }
 
-
-.edit {
-position: fixed;
-top: 122.5px;
-left: 20px;
-width: auto; 
-height: auto;
-color: #fff;
-font-size: 12.5px;
-margin-right: 280px;
-padding-right: 10px;
-padding-left: 10px;
-border-radius: 10px;
-overflow: hidden;
-border: 0.5px solid #3f4868;
-cursor: pointer;
-opactiy: 0.5;
-background: linear-gradient(to right, #ea517c, #b478f1);
-}
-
+.topic-selection, .edit {
+   position: fixed;
+   top: 125px;
+   padding: 5px 10px; /* Combined padding for simplicity */
+   border-radius: 10px;
+   /* border: 0.5px solid #3f4868; */
+   font-size: 12.5px;
+   cursor: pointer;
+   color: #fff;
+   background: linear-gradient(to right, #ea517c, #b478f1);
+  }
+  
+  .topic-selection {
+   right: 20px;
+  
+   width: auto;
+   height: auto;
+   margin-left: 270px;
+  }
+  
+  .edit {
+   left: 20px;
+    width: auto; 
+    height: auto;
+    margin-right: 266px;
+  
+  }
 
 .subject {
 display: flex;
@@ -158,23 +165,22 @@ display: flex; /* Shows the content when active */
 }
 
 .collapsible-box {
-display: flex;
-align-items: center;
-background-color: rgba(173, 216, 238, 0.5);
-align-items: center;
-padding: 12px;
-
-margin-bottom: 10px;
-border-radius: 10px;
-text-decoration: none;
-color: #000;
-border: 0.5px solid #cfcfdd;
-position: relative;
-cursor: pointer;
-
-word-wrap: break-word; /* Allows breaking long words */
-white-space: pre-wrap; /* Preserves whitespace and wraps text */
-overflow-wrap: break-word; /* Breaks long words if needed */
+ top: -10px;
+ display: flex;
+ align-items: center;
+ background-color: rgba(173, 216, 238, 0.5);
+ align-items: center;
+ padding: 12px;
+ /* bottom: 10px; */
+ /* bottom: -12px; */
+ text-decoration: none;
+ color: #000;
+ border: 0.5px solid #cfcfdd;
+ position: relative;
+ cursor: pointer;
+ word-wrap: break-word; /* Allows breaking long words */
+ white-space: pre-wrap; /* Preserves whitespace and wraps text */
+ overflow-wrap: break-word; /* Breaks long words if needed */
 }
 
 .rro .rotate {

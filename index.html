@@ -15,7 +15,7 @@
   <!-- Button container with two buttons -->
   <div class="button-container">
     <!-- Link to HSC MCQ test page -->
-    <a href="subject.html" class="button button-hsc" onclick="startServer()">
+    <a href="subject.html" class="button button-hsc" >
       <span class="typing-text" data-text="HSC"></span>
       <span class="small-text typing-text" data-text="MCQ test"></span>
     </a>
@@ -79,23 +79,7 @@
       });
     }
 
-    function startServer() {
-      fetch('http://localhost:8080/start-server', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      .then(response => response.text())
-      .then(data => {
-        console.log('Server response:', data);
-        alert('Server started successfully!');
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        alert('Failed to start server. Check console for details.');
-      });
-    }
+   
   </script>
 </body>
 </html>

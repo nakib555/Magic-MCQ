@@ -18,7 +18,7 @@
             <h2 class="typing-text" data-text="বাংলা ১ম পত্র"></h2>
             <div class="header-row">
                 <h3 class="typing-text" data-text="অধ্যায় নির্ধারণ করুন"></h3>
-                <div class="topic-selection" data-subject-name="Topic Selection" onclick="openQuiz('Topic Selection')">
+                <div class="topic-selection" data-subject-name="Topic Selection" onclick="openmultiselection('Topic Selection')">
                     <span class="typing-text" data-text="Topic Selection"></span>
                 </div>
                 <div class="edit" data-subject-name="Add & Modify" onclick="openEdit()">
@@ -227,6 +227,15 @@
             style=" min-height: 100vh;width: 100vw;
             backdrop-filter: blur(2.5px);"></iframe>
     </div>
+
+    <div id="quiz-container" style=" position: fixed; z-index: 2000;
+    display: none;"> 
+    <iframe id="quiz-iframe" src="Topic Selection.html" 
+        
+        style=" min-height: 100vh;width: 100vw;
+        backdrop-filter: blur(2.5px);"></iframe>
+    </div>
+
     <div id="Edit-container" style=" position: fixed; z-index: 2001;
 
         display: none;"> 

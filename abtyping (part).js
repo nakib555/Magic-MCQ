@@ -94,20 +94,13 @@ function getHeaderHeight() {
   return header.offsetHeight;
 }
 
-// Function to open quiz iframe
-function openQuiz(subjectName) {
-  // Refresh the quiz iframe before opening it
-  const quizIframe = document.getElementById("quiz-iframe");
-  quizIframe.src = 'quiz.html'; // Assuming the quiz iframe's src is 'Quiz.html'
-  quizIframe.onload = () => {
-    // Send the subject name to the quiz iframe after it loads
-    quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
-  };
-  const quizContainer = document.getElementById("quiz-container");
-  quizContainer.style.display = "block";
+
+
+function getSubjectMargin() {
+  // Your code to calculate or retrieve the subject margin
+  return 10; // Example return value
 }
 
-// Function to create question and explanation boxes dynamically
 function createQuestionAndExplanation(
   subjectName,
   section,
@@ -122,14 +115,18 @@ function createQuestionAndExplanation(
   // Create the question box
   const questionDiv = document.createElement("div");
   questionDiv.classList.add(`${section}-box`);
-  questionDiv.id = `${section}-question-${subjectName}-${index}`; 
+  questionDiv.id = `${section}-question-${subjectName}-${index}`;
+  questionDiv.style.marginTop = `${getSubjectMargin(subjectName)}px`; // Set margin-top dynamically
+  questionDiv.style.marginBottom = `${getSubjectMargin(subjectName)}px`; // Set margin-bottom dynamically
   questionDiv.innerHTML = ""; // Initially empty
   contentContainer.appendChild(questionDiv);
 
   // Create the explanation box
   const explanationDiv = document.createElement("div");
   explanationDiv.classList.add(`${section}-explanation`);
-  explanationDiv.id = `${section}-explanation-${subjectName}-${index}`; 
+  explanationDiv.id = `${section}-explanation-${subjectName}-${index}`;
+  explanationDiv.style.marginTop = `${getSubjectMargin(subjectName)}px`; // Set margin-top dynamically
+  explanationDiv.style.marginBottom = `${getSubjectMargin(subjectName)}px`; // Set margin-bottom dynamically
 
   const explanationBox = document.createElement("div");
   explanationBox.classList.add(`${section}-explanation-box`);
@@ -169,9 +166,6 @@ function createQuestionAndExplanation(
   typeText(explanationBox, `${explanation} `, 10); 
 }
 
-
-
-// Function to toggle sections and show questions
 function toggleSection(button, section, subjectName) {
   // Check if the button is already active
   const isButtonActive = button.classList.contains("active");
@@ -184,8 +178,6 @@ function toggleSection(button, section, subjectName) {
   if (!isButtonActive) {
     button.classList.add("active");
   }
-
-
 
   if (questionData) {
     // Fetch the question and explanation from JSON using the unique subjectName
@@ -265,7 +257,8 @@ function toggleSection(button, section, subjectName) {
         array.forEach((_item, index) => {
           const explanationBox = document.getElementById(`${sectionPrefix}-explanation-box-${subjectName}-${index}`);
           if (explanationBox) {
-            explanationBox.style.marginTop = `${1}px`;
+            explanationBox.style.marginTop = `${getSubjectMargin(subjectName)}px`; // Update margin-top dynamically
+            explanationBox.style.marginBottom = `${getSubjectMargin(subjectName)}px`; // Update margin-bottom dynamically
           }
         });
       });
@@ -273,37 +266,35 @@ function toggleSection(button, section, subjectName) {
   }
 }
 
-
-
 function toggleCollapse(button) {
   const collapsibleContent = button.parentElement.nextElementSibling;
 
   if (collapsibleContent) {
-      const isActive = collapsibleContent.classList.toggle('active');
+    const isActive = collapsibleContent.classList.toggle('active');
 
-      // Toggle the active class on the button
-      button.classList.toggle('active', isActive);
+    // Toggle the active class on the button
+    button.classList.toggle('active', isActive);
 
-      if (!isActive) {
-          // Reset the collapsible-box content
-          collapsibleContent.querySelectorAll('.collapsible-box').forEach(box => {
-              box.textContent = '';
-              if (box.typingEffect) {
-                  box.typingEffect();
-                  delete box.typingEffect;
-              }
-          });
-      } else {
-          collapsibleContent.querySelectorAll('.collapsible-box').forEach(box => {
-              const text = box.getAttribute('data-text');
-              box.textContent = '';
-              box.typingEffect = typeText(box, text, 4);
-          });
-      }
+    if (!isActive) {
+      // Reset the collapsible-box content
+      collapsibleContent.querySelectorAll('.collapsible-box').forEach(box => {
+        box.textContent = '';
+        if (box.typingEffect) {
+          box.typingEffect();
+          delete box.typingEffect;
+        }
+      });
+    } else {
+      collapsibleContent.querySelectorAll('.collapsible-box').forEach(box => {
+        const text = box.getAttribute('data-text');
+        box.textContent = '';
+        box.style.marginTop = `${getSubjectMargin(box.parentElement.parentElement.dataset.subjectName)}px`; // Set margin-top dynamically
+        box.style.marginBottom = `${getSubjectMargin(box.parentElement.parentElement.dataset.subjectName)}*0px`; // Set margin-bottom dynamically
+        box.typingEffect = typeText(box, text, 4);
+      });
+    }
   }
 }
-
-
 
 
 window.addEventListener("message", function (event) {
@@ -323,6 +314,18 @@ function getSubjectNames() {
     return subjectNames;
 }
 
+// Function to open quiz iframe
+function openQuiz(subjectName) {
+  // Refresh the quiz iframe before opening it
+  const quizIframe = document.getElementById("quiz-iframe");
+  quizIframe.src = 'quiz.html'; // Assuming the quiz iframe's src is 'Quiz.html'
+  quizIframe.onload = () => {
+    // Send the subject name to the quiz iframe after it loads
+    quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
+  };
+  const quizContainer = document.getElementById("quiz-container");
+  quizContainer.style.display = "block";
+}
 
 
 function openEdit() {
@@ -341,6 +344,34 @@ function openEdit() {
       console.error('Edit-container or Edit-iframe not found.');
   }
 }
+
+function openmultiselection(subjectName) {
+  const container = document.getElementById('quiz-container');
+  const iframe = document.getElementById('quiz-iframe');
+  
+  if (!container || !iframe) {
+      console.error('quiz-container or quiz-iframe not found.');
+      return;
+  }
+
+  iframe.src = 'Topic Selection.html'; // Load the Topic Selection page
+  
+  iframe.onload = () => {
+    // Send the specific subject name to the quiz iframe after it loads
+    iframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
+    
+    // Send all the subject names to the iframe after it loads
+    const subjectNames = getSubjectNames(); // Function to get all subject names
+    try {
+        iframe.contentWindow.postMessage({ subjectNames: subjectNames }, '*');
+    } catch (error) {
+        console.error('Message sending failed:', error);
+    }
+  };
+
+  container.style.display = 'block'; // Show the quiz container
+}
+
 
 
 function closeEdit() {
@@ -471,9 +502,9 @@ const forceReflow = () => document.body.offsetHeight;
 // Load the JSON data from ab.json
 let questionData = null;
 const urls = [
-  'http://localhost:5500/',
+'http://localhost:8080/',
   'http://localhost:3001/',
-  'http://localhost:8080/'
+'http://localhost:5500/'
 ];
 
 async function loadQuestionData() {
