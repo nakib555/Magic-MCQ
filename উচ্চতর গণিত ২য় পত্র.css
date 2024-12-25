@@ -24,7 +24,7 @@ html {
 
   
 }
-
+/* Header Container Styling */
 .header {
   text-align: center;
   position: fixed;
@@ -32,69 +32,166 @@ html {
   left: 0;
   right: 0;
   width: 100vw;
-  background-color: #fff;
+  padding: 13px;
+  background: linear-gradient(135deg, #ea517c, #b478f1); /* Gradient background */
   z-index: 1000;
-  margin-bottom: 20px;
   box-sizing: border-box;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15); /* Larger shadow for depth */
+  border-bottom: 3px solid #f1e9e9; /* Thin border below header for separation */
+  color: white;
+  font-family: 'Poppins', sans-serif; /* Creative and modern font */
+  animation: headerAnim 1s ease-in-out;
 }
 
+/* Header text animations */
+@keyframes headerAnim {
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Styling for h1, h2, h3 inside the header */
 .header h1 {
-  font-size: 31px;
+  font-size: 36px; /* Larger size for the main title */
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); /* Adds depth */
+  letter-spacing: 2px; /* Spacing between letters for a more spacious feel */
+  color: #fff;
+  text-transform: uppercase; /* Makes it all caps */
+  transition: all 0.4s ease;
 }
+
+.header h1:hover {
+  transform: scale(1.05); /* Scales up on hover for emphasis */
+  color: #f1e9e9;
+  text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.5); /* Enhances text-shadow on hover */
+}
+
+/* Styling for h2 */
 .header h2 {
-  font-size: 20px;
+  font-size: 24px; /* Medium size for secondary title */
+  font-weight: 600;
+  margin: 10px 0;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.85); /* Slightly transparent */
+  opacity: 0.9;
+  text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
 }
+
+.header h2:hover {
+  color: #f1e9e9;
+  opacity: 1;
+  transform: translateY(-5px); /* Hover lifts the text */
+}
+
+/* Styling for h3 */
 .header h3 {
-  font-size: 17px;
+  font-size: 18px; /* Smaller size for subheading */
+  font-weight: 500;
+  margin: 5px 0;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.7); /* Lighter color */
   opacity: 0.75;
-  font-weight: normal;
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
-
-.head-row{
-  position: fixed;
-   justify-content: space-around;
-
-
+.header h3:hover {
+  color: #f1e9e9;
+  opacity: 1;
+  transform: translateY(-3px); /* Subtle lift effect on hover */
 }
 
-.topic-selection {
-  position: fixed;
-  top: 122.5px;
-  right: 20px;
-  width: auto; 
-  height: auto;
-  margin-left: 300px;
-  padding-right: 7px;
-  padding-left: 7px;
-  border-radius: 10px;
-  border: 0.5px solid #3f4868;
-  font-size: 12.5px;
-  cursor: pointer;
-  color: #fff;
-  opactiy: 0.5;
-  background: linear-gradient(to right, #ea517c, #b478f1);
+/* Spacing and alignment */
+.header h1 + .header h2 {
+  margin-top: 20px; /* More space between h1 and h2 */
 }
 
-
-.edit {
-  position: fixed;
-  top: 122.5px;
-  left: 20px;
-  width: auto; 
-  height: auto;
-  color: #fff;
-  font-size: 12.5px;
-  margin-right: 280px;
-  padding-right: 10px;
-  padding-left: 10px;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 0.5px solid #3f4868;
-  cursor: pointer;
-  opactiy: 0.5;
-  background: linear-gradient(to right, #ea517c, #b478f1);
+.header h2 + .header h3 {
+  margin-top: 15px; /* Adjust spacing between h2 and h3 */
 }
+
+/* Responsive Design for mobile screens */
+@media (max-width: 768px) {
+  /* Adjust header padding for smaller screens */
+  .header {
+    padding: 30px 10px;
+  }
+
+  /* Font adjustments for h1 */
+  .header h1 {
+    font-size: 30px; /* Slightly smaller h1 */
+    letter-spacing: 1px; /* Less letter spacing for mobile */
+  }
+
+  /* Font adjustments for h2 */
+  .header h2 {
+    font-size: 20px; /* Slightly smaller h2 */
+    margin: 8px 0;
+  }
+
+  /* Font adjustments for h3 */
+  .header h3 {
+    font-size: 16px; /* Smaller font for subheading */
+    margin: 5px 0;
+  }
+
+  /* Text shadow adjustments for mobile */
+  .header h1, .header h2, .header h3 {
+    text-shadow: none; /* Removing text-shadow for better legibility on small screens */
+  }
+
+  /* Adjust spacing for better readability */
+  .header h1 + .header h2 {
+    margin-top: 15px;
+  }
+
+  .header h2 + .header h3 {
+    margin-top: 10px;
+  }
+
+  /* Ensure proper margin and padding on mobile */
+  .header h1, .header h2, .header h3 {
+    padding: 0 10px;
+  }
+}
+
+/* Very small screens (like portrait mobile) */
+@media (max-width: 480px) {
+  /* Further reduce font size */
+  .header h1 {
+    font-size: 26px;
+  }
+
+  .header h2 {
+    font-size: 18px;
+  }
+
+  .header h3 {
+    font-size: 14px;
+  }
+
+  /* Adjust header height and margins for small screens */
+  .header {
+    padding: 8px 8px;
+  }
+
+  .header h1 + .header h2 {
+    margin-top: 12px;
+  }
+
+  .header h2 + .header h3 {
+    margin-top: 8px;
+  }
+}
+
 
 
 .subject {
@@ -102,7 +199,7 @@ html {
   align-items: center;
   background-color: rgba(173, 216, 238, 0.5);
   padding: 10px;
-  top:-17.5px;
+top: -12.5px;
   margin-bottom: 10px;
   border-radius: 10px;
   text-decoration: none;

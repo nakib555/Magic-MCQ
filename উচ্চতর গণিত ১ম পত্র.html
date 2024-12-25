@@ -19,26 +19,7 @@
                 class="typing-text"
                 data-text="অধ্যায় নির্ধারণ করুন"
             ></h3>
-            <div
-                class="topic-selection"
-                data-subject-name="Topic Selection"
-                onclick="openQuiz('Topic Selection')"
-            >
-                <span
-                    class="typing-text"
-                    data-text="Topic Selection"
-                ></span>
-            </div>
-            <div
-                class="edit"
-                data-subject-name="Add & Modify"
-                onclick="openEdit()"
-            >
-                <span
-                    class="typing-text"
-                    data-text="Add & Modify"
-                ></span>
-            </div>
+
         </div>
     </div>
     <div class="subject" data-subject-name="প্রথম অধ্যায় : ম্যাট্রিক্স নির্ণায়ক">
@@ -76,30 +57,15 @@
         id="quiz-container"
         style="position: fixed; z-index: 2100; display: none"
     >
-        <iframe
-            id="quiz-iframe"
-            src="quiz.html"
-            style="
+        <iframe id="quiz-iframe" src="quizhm.html" style="
                 min-height: 100vh;
                 width: 100vw;
                 backdrop-filter: blur(2.5px);
-            "
-        ></iframe>
+                               border: 0px;
+
+            "></iframe>
     </div>
-    <div
-        id="Edit-container"
-        style="position: fixed; z-index: 2101; display: none"
-    >
-        <iframe
-            id="Edit-iframe"
-            src="Edit.html"
-            style="
-                min-height: 100vh;
-                width: 100vw;
-                backdrop-filter: blur(2.5px);
-            "
-        ></iframe>
-    </div>
-    <script src="abtyping (part).js"></script>
+
+    <script src="abtyping (part2).js"></script>
     </body>
     </html>
