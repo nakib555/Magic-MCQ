@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="জীববিজ্ঞান ২য় পত্র.css" />
         <title>জীববিজ্ঞান ২য় পত্র</title>
+        <script src="ab.js"></script>
     </head>
     <body>
         <a href="subject.html" class="floating-box">
@@ -19,26 +20,7 @@
                         class="typing-text"
                         data-text="অধ্যায় নির্ধারণ করুন"
                     ></h3>
-                    <div
-                        class="topic-selection"
-                        data-subject-name="Topic Selection"
-                        onclick="openQuiz('Topic Selection')"
-                    >
-                        <span
-                            class="typing-text"
-                            data-text="Topic Selection"
-                        ></span>
-                    </div>
-                    <div
-                        class="edit"
-                        data-subject-name="Add & Modify"
-                        onclick="openEdit()"
-                    >
-                        <span
-                            class="typing-text"
-                            data-text="Add & Modify"
-                        ></span>
-                    </div>
+
                 </div>
             </div>
             <div
@@ -290,30 +272,15 @@
             id="quiz-container"
             style="position: fixed; z-index: 2000; display: none"
         >
-            <iframe
-                id="quiz-iframe"
-                src="quiz.html"
-                style="
-                    min-height: 100vh;
-                    width: 100vw;
-                    backdrop-filter: blur(2.5px);
-                "
-            ></iframe>
+            <iframe id="quiz-iframe" src="quiz.html" style="
+                min-height: 100vh;
+                width: 100vw;
+                backdrop-filter: blur(2.5px);
+                         border: 0px;
+
+            "></iframe>
         </div>
-        <div
-            id="Edit-container"
-            style="position: fixed; z-index: 2001; display: none"
-        >
-            <iframe
-                id="Edit-iframe"
-                src="Edit.html"
-                style="
-                    min-height: 100vh;
-                    width: 100vw;
-                    backdrop-filter: blur(2.5px);
-                "
-            ></iframe>
-        </div>
+     
         <script src="abtyping (part).js"></script>
     </body>
 </html>

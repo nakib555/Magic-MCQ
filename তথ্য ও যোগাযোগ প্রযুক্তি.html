@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="তথ্য ও যোগাযোগ প্রযুক্তি.css">
         <title>তথ্য ও যোগাযোগ প্রযুক্তি</title>
+        <script src="ab.js"></script>
     </head>
     <body>
         <a href="subject.html" class="floating-box">
@@ -20,16 +21,7 @@
                         data-text="অধ্যায় নির্ধারণ করুন"
                     ></h3>
                   
-                    <div
-                        class="edit"
-                        data-subject-name="Add & Modify"
-                        onclick="openEdit()"
-                    >
-                        <span
-                            class="typing-text"
-                            data-text="Add & Modify"
-                        ></span>
-                    </div>
+
                 </div>
             </div>
             <div class="subject" data-subject-name="প্রথম অধ্যায় : তথ্য ও যোগাযোগ প্রযুক্তি : বিশ্ব ও বাংলাদেশ">
@@ -96,31 +88,16 @@
         id="quiz-container"
         style="position: fixed; z-index: 2100; display: none"
     >
-        <iframe
-            id="quiz-iframe"
-            src="quiz.html"
-            style="
+        <iframe id="quiz-iframe" src="quiz.html" style="
                 min-height: 100vh;
                 width: 100vw;
                 backdrop-filter: blur(2.5px);
-            "
-        ></iframe>
+                  border: 0px;
+
+            "></iframe>
     </div>
-    <div
-        id="Edit-container"
-        style="position: fixed; z-index: 2101; display: none"
-    >
-        <iframe
-            id="Edit-iframe"
-            src="Edit.html"
-            style="
-                min-height: 100vh;
-                width: 100vw;
-                backdrop-filter: blur(2.5px);
-            "
-        ></iframe>
-    </div>
+
     <script src="abtyping (part).js"></script>
-        <script src="ab.js"></script>
+
 </body>
 </html>
