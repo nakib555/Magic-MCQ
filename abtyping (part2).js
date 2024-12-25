@@ -110,8 +110,7 @@ function createQuestionAndExplanation(
     questionImage.style.border = "1px solid #ccc"; // Optional styling
     questionDiv.appendChild(questionImage);
   } else {
-    // Add prefix "ক" for section 'a' or "খ" for section 'b'
-    questionDiv.textContent = `${section === "a" ? "ক" : "খ"}. ${question}`;
+    questionDiv.textContent = question;
   }
 
   contentContainer.appendChild(questionDiv);
@@ -155,7 +154,6 @@ function createQuestionAndExplanation(
     explanationBox.style.display = isHidden ? "block" : "none";
   });
 }
-
 
 function toggleSection(button, section, subjectName) {
   const isButtonActive = button.classList.contains("active");
@@ -271,79 +269,48 @@ function getSubjectNames() {
   });
   return subjectNames;
 }
+
 function openQuiz(subjectName) {
   const quizIframe = document.getElementById("quiz-iframe");
-  const quizContainer = document.getElementById("quiz-container");
-
-  if (!quizIframe || !quizContainer) {
-    console.error("Quiz iframe or container not found.");
-    return;
-  }
-
-  // Set the iframe source immediately
-  quizIframe.src = "quiz.html";
-
-  // Post the message as soon as the iframe content window is available
-  try {
-    // Directly post the message after setting the iframe's src
+  quizIframe.src = "quizhm.html";
     quizIframe.onload = () => {
-      quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
-    };
-  } catch (error) {
-    console.error("Failed to post message to the iframe:", error);
-  }
-
-  // Make the quiz container visible immediately
-  quizContainer.style.display = "block";
+    quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
+  };
+  document.getElementById("quiz-container").style.display = "block";
 }
-
 
 async function loadQuestionData() {
   try {
-    // First, load data from IndexedDB
+    // First, try to get data from IndexedDB
     const cachedData = await IndexedDBHelper.getData();
 
-    // Check if abData exists and update IndexedDB accordingly
-    if (typeof abData !== "undefined" && abData) {
-      questionData = abData; // Load abData as the source of truth
-
-      // If no cached data exists or if cached data differs from abData
-      if (!cachedData || JSON.stringify(cachedData) !== JSON.stringify(abData)) {
-        console.log("Updating IndexedDB with new abData...");
-        await IndexedDBHelper.saveData(abData);
-      } else {
-        console.log("Cached data matches abData. No update needed.");
-      }
-      return;
-    }
-
-    // If abData is not available, fall back to cached data
     if (cachedData) {
-      console.log("Using cached data from IndexedDB.");
+      // Use cached data if available
       questionData = cachedData;
       return;
     }
 
-    // If neither abData nor cached data is available
-    console.error("No abData available and no cached data found.");
-    const errorMessage = document.getElementById("error-message");
-    if (errorMessage) {
-      errorMessage.textContent =
-        "Error loading questions. Please refresh the page.";
-      errorMessage.classList.remove("hide");
+    // If no cached data, use abData and save to IndexedDB
+    if (typeof abData !== 'undefined' && abData) {
+      questionData = abData;
+      // Save to IndexedDB for future use
+      await IndexedDBHelper.saveData(abData);
+    } else {
+      const errorMessage = document.getElementById('error-message');
+      if (errorMessage) {
+        errorMessage.textContent = "Error loading questions. Please refresh the page.";
+        errorMessage.classList.remove("hide");
+      }
     }
   } catch (error) {
     console.error("Error loading question data:", error);
-    const errorMessage = document.getElementById("error-message");
+    const errorMessage = document.getElementById('error-message');
     if (errorMessage) {
-      errorMessage.textContent =
-        "Error loading questions. Please refresh the page.";
+      errorMessage.textContent = "Error loading questions. Please refresh the page.";
       errorMessage.classList.remove("hide");
     }
   }
 }
-
-
 
 // Load initial data when the page loads
 document.addEventListener('DOMContentLoaded', loadQuestionData);
