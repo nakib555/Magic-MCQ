@@ -526,13 +526,10 @@ input[type="number"] {
   }
 }
 .mjx-mrow {
-         white-space: normal;         
-         overflow-wrap: break-word;  
-         word-break: normal;         
+               
          line-height: 0.3;
-         margin-right: 4px;
+        
 }
-
 .MathJax_Menu{
   display: none;
 }

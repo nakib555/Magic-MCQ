@@ -1,5 +1,5 @@
 let questions = [], currentQuestion = 0, score = 0, timeRemaining = 0, timerInterval, selectedAnswer = null, questionLimit = 15, typingInterval, autoNextTimeout, shuffledQuestions = [], data = null;
-const urls = [ 'http://localhost:8080/', 'http://localhost:3001/', 'http://localhost:5500/'];
+
 const startScreenHeading = document.getElementById("start-screen-heading");
 const startScreen = document.querySelector(".start-screen");
 const quizScreen = document.querySelector(".quiz");
@@ -22,44 +22,59 @@ const questionContainer = document.querySelector(".question");
 const questionLimitInput = document.getElementById("question-limit");
 const timeLimitInput = document.getElementById("time-limit");
 let subjectName, questionHistory = {};
+nextButton.disabled = false;
+
+
+function stripHTML(html) {
+  let temp = document.createElement("div");
+  temp.innerHTML = html;
+  return temp.textContent || temp.innerText || "";
+}
 
 // Functions for managing localStorage
 function saveQuestionHistory() {
-  localStorage.setItem('quizQuestionHistory', JSON.stringify(questionHistory));
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('quizQuestionHistory', JSON.stringify(questionHistory));
+    } catch (error) {
+      console.error("Error saving question history to localStorage:", error);
+    }
+  } else {
+    console.warn("localStorage is not available. Skipping save operation.");
+  }
 }
 
 function loadQuestionHistory() {
-  const savedHistory = localStorage.getItem('quizQuestionHistory');
-  if (savedHistory) {
-    questionHistory = JSON.parse(savedHistory);
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const savedHistory = localStorage.getItem('quizQuestionHistory');
+      if (savedHistory) {
+        questionHistory = JSON.parse(savedHistory);
+      } else {
+        questionHistory = {}; // Initialize to empty object if no saved history
+      }
+    } catch (error) {
+      console.error("Error loading question history from localStorage:", error);
+      questionHistory = {}; // Reset history to default if parsing fails
+      displayError("Error loading question history. Starting with a clean slate.");
+    }
+  } else {
+    console.warn("localStorage is not available. Skipping load operation.");
+    questionHistory = {}; // Initialize to empty object if localStorage is not available
   }
 }
 
+
 async function loadQuestionData() {
-  for (const baseUrl of urls) {
-    try {
-      const response = await fetch(`${baseUrl}questions.json`);
-      if (!response.ok) {
-        console.warn(`Failed to fetch from ${baseUrl}questions.json. Status: ${response.status}`);
-        continue;
-      }
-      const data = await response.json();
+  // Instead of fetching, just return the questionsData
 
-      loadQuestionHistory();
-      data.sections.forEach(section => {
-        if (!questionHistory[section.section]) {
-          questionHistory[section.section] = [];
-        }
-      });
-
-      return data;
-    } catch (error) {
-      console.error(`Error fetching or parsing data from ${baseUrl}questions.json:`, error);
+  questionsData.sections.forEach(section => {
+    if (!questionHistory[section.section]) {
+      questionHistory[section.section] = [];
     }
-  }
+  });
 
-  displayError("Error loading questions. Please refresh the page.");
-  return null;
+  return questionsData;
 }
 
 function displayError(message) {
@@ -169,17 +184,28 @@ function startQuiz() {
 
 function selectQuestions(allQuestions, limit, subject) {
   let selectedQuestions = [];
+  
+  // Ensure questionHistory is defined and initialized for the subject
+  if (!questionHistory[subject]) {
+    questionHistory[subject] = [];
+  }
+  
   let availableQuestions = allQuestions.filter(q => !questionHistory[subject].includes(q.question));
 
   if (availableQuestions.length < limit) {
-    const historyQuestions = questionHistory[subject];
+    const historyQuestions = [...questionHistory[subject]]; // Make a copy to avoid modifying the original during the loop
+
     while (selectedQuestions.length < limit) {
       if (availableQuestions.length === 0) {
         if (historyQuestions.length === 0) break;
+
         const randomIndex = Math.floor(Math.random() * historyQuestions.length);
-        const question = historyQuestions.splice(randomIndex, 1)[0];
-        if (!selectedQuestions.some(q => q.question === question)) {
-          selectedQuestions.push(allQuestions.find(q => q.question === question));
+        const questionText = historyQuestions.splice(randomIndex, 1)[0];
+
+        // Find the question in allQuestions
+        const question = allQuestions.find(q => q.question === questionText);
+        if (question && !selectedQuestions.some(q => q.question === question.question)) {
+          selectedQuestions.push(question);
         }
       } else {
         const randomIndex = Math.floor(Math.random() * availableQuestions.length);
@@ -188,6 +214,8 @@ function selectQuestions(allQuestions, limit, subject) {
         questionHistory[subject].push(question.question);
       }
     }
+
+    // Clear history if necessary
     if (historyQuestions.length < questionHistory[subject].length) {
       questionHistory[subject] = [];
     }
@@ -200,6 +228,7 @@ function selectQuestions(allQuestions, limit, subject) {
     }
   }
 
+  // Fill remaining slots from allQuestions if needed
   while (selectedQuestions.length < limit) {
     const randomIndex = Math.floor(Math.random() * allQuestions.length);
     const question = allQuestions[randomIndex];
@@ -211,6 +240,7 @@ function selectQuestions(allQuestions, limit, subject) {
   saveQuestionHistory();
   return shuffleArray(selectedQuestions);
 }
+
   function convertNewlinesToHtml(text) {
     return text.replace(/\n/g, '<br>');
 }
@@ -226,6 +256,8 @@ function processTextWithImages(text, isEditMode = false) {
       return `<div><img src="${imgSrc}" style="margin: 10px 0; height: auto; max-width: 100%;" alt="Image"></div>`;
   });
 }
+
+
 function displayQuestion() {
   if (!shuffledQuestions || currentQuestion < 0 || currentQuestion >= shuffledQuestions.length) {
     showError("Invalid question index or question array.");
@@ -235,26 +267,50 @@ function displayQuestion() {
   const questionData = shuffledQuestions[currentQuestion];
   clearPreviousContent();
 
-  // Process the question text
-  const content = `
-  <h5>${convertNewlinesToHtml(processTextWithImages(questionData.question))}</h5>
-`;
+  // Process the question text with images and LaTeX
+  let content = processTextWithImages(questionData.question);
 
-  // Clear the questionElement and start typing the question
-  questionElement.innerHTML = content; // Clear previous text
+  // Replace <... class="mathy"> with <script type="math/asciimath">, preserving inner content
+  content = content.replace(/<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, function(_match, p1) {
+    // Strip out any HTML tags inside the mathy element content
+    const cleanedContent = p1.replace(/<[^>]*>/g, ''); // Remove all HTML tags
+    return `<script type="math/asciimath">${cleanedContent}</script>`;
+  });
 
-  // Call the typing function with a callback to handle after typing is complete
-  
-    answerWrapperElement.style.opacity = "1";
-    answerWrapperElement.style.animation = "fadeInUp 1s";
+  const questionHTML = `
+    <h5>${convertNewlinesToHtml(content)}</h5>
+  `;
+  questionElement.innerHTML = questionHTML;
 
-    displayAnswers(questionData);
-    
-    previousButton.disabled = currentQuestion === 0;
+  // Ensure all images in the question have drag prevention
+  const questionImages = questionElement.querySelectorAll("img");
+  questionImages.forEach(img => {
+    img.addEventListener('dragstart', (event) => {
+      event.preventDefault(); // Prevent dragging
+    });
+  });
 
-    updateQuestionCounter();
-  
+  // Render MathJax to process ASCII Math
+  MathJax.Hub.Queue(["Typeset", MathJax.Hub, questionElement]);
+
+
+  // Display the answers
+  displayAnswers(questionData);
+
+  // Fade-in animation for answers
+  answerWrapperElement.style.opacity = "1";
+  answerWrapperElement.style.animation = "fadeInUp 1s";
+
+  // Disable the previous button if this is the first question
+  previousButton.disabled = currentQuestion === 0;
+
+  // Update the question counter
+  updateQuestionCounter();
 }
+
+
+
+
 
 
 function showError(_message) {
@@ -271,41 +327,84 @@ function updateQuestionCounter() {
   document.querySelector(".current").innerHTML = currentQuestion + 1;
   document.querySelector(".total").innerHTML = questionLimit;
 }
-
-
-
-
 function displayAnswers(questionData) {
   if (questionData.answered) {
+    // If the question has been answered, display all options
     questionData.options.forEach((option) => {
       const answerButton = document.createElement("div");
       answerButton.classList.add("answer");
 
-      displayTextAndImage(answerButton, option);
+      // Get the option text and its correctness (key = option text, value = is correct)
+      const optionText = Object.keys(option)[0];
+      const isCorrect = option[optionText];
 
-      if (isCorrectAnswer(option, questionData.correctAnswer)) {
+      // Add the "c" class to the correct answer
+      if (isCorrect) {
+        answerButton.classList.add("c"); // Add the "c" class to mark it as correct
+      }
+
+      // Process the option text with images if needed
+      let content = optionText;
+      
+      // Handle MathJax content replacement
+      content = content.replace(/<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, function(match, p1) {
+        const cleanedContent = p1.replace(/<[^>]*>/g, ''); // Remove all HTML tags
+        return `<script type="math/asciimath">${cleanedContent}</script>`;
+      });
+
+      // Render the content inside the button
+      displayTextAndImage(answerButton, content);
+
+      // Check if the option is correct or the selected wrong answer
+      if (isCorrect) {
         answerButton.classList.add("correct");
-      } else if (option === questionData.selectedAnswer) {
+      } else if (optionText === questionData.selectedAnswer) {
         answerButton.classList.add("wrong");
       }
 
+      // Disable all buttons since the question has been answered
       answerButton.classList.add("disabled");
       answerWrapperElement.appendChild(answerButton);
     });
   } else {
+    // Shuffle options and display them for answering
     const shuffledOptions = shuffleArray(questionData.options);
 
     shuffledOptions.forEach((option) => {
       const answerButton = document.createElement("div");
       answerButton.classList.add("answer");
 
-      displayTextAndImage(answerButton, option);
+      // Get the option text and its correctness (key = option text, value = is correct)
+      const optionText = Object.keys(option)[0];
+      const isCorrect = option[optionText];
 
+      // Add the "c" class to the correct answer
+      if (isCorrect) {
+        answerButton.classList.add("c"); // Mark the correct option with "c"
+      }
+
+      // Process the option text with images if needed
+      let content = optionText;
+
+      // Handle MathJax content replacement
+      content = content.replace(/<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, function(match, p1) {
+        const cleanedContent = p1.replace(/<[^>]*>/g, ''); // Remove all HTML tags
+        return `<script type="math/asciimath">${cleanedContent}</script>`;
+      });
+
+      // Render the content inside the button
+      displayTextAndImage(answerButton, content);
+
+      // Allow user to select an answer
       answerButton.addEventListener("click", () => selectAnswer(answerButton, option));
       answerWrapperElement.appendChild(answerButton);
     });
   }
+
+  // Trigger MathJax to render any math content that was inserted dynamically
+  MathJax.Hub.Queue(["Typeset", MathJax.Hub, answerWrapperElement]);
 }
+
 
 function displayTextAndImage(element, content) {
   if (typeof content === 'string') {
@@ -324,6 +423,12 @@ function displayTextAndImage(element, content) {
           imgElement.style.maxWidth = '100%';
           imgElement.style.height = 'auto';
           imgElement.style.margin = '10px 0';
+          
+          // Prevent dragging of images
+          imgElement.addEventListener('dragstart', (event) => {
+            event.preventDefault(); // Prevent dragging
+          });
+
           element.appendChild(imgElement);
         } else if (part.trim() !== '') {
           const textWithBreaks = part.replace(/\n/g, '<br>');
@@ -347,88 +452,71 @@ function displayTextAndImage(element, content) {
       imgElement.style.maxWidth = '100%';
       imgElement.style.height = 'auto';
       imgElement.style.margin = '10px 0';
+      
+      // Prevent dragging of images
+      imgElement.addEventListener('dragstart', (event) => {
+        event.preventDefault(); // Prevent dragging
+      });
+
       element.appendChild(imgElement);
     }
   }
 }
 
+// Helper function to check if an answer is correct
+function isCorrectAnswer(option) {
+  return Object.values(option)[0] === true; // Assuming the option value is a boolean indicating correctness
+}
+
 
 function selectAnswer(answerButton, selectedOption) {
   if (shuffledQuestions[currentQuestion].answered) {
-    return;
+    return; // Prevent selecting an answer if the question is already answered
   }
 
-  selectedAnswer = answerButton;
+  let selectedAnswer = answerButton; // Declare the variable
   selectedAnswer.classList.add("selected");
 
-  const correctAnswer = shuffledQuestions[currentQuestion].correctAnswer;
+  // Find the correct option from the current question (option with correctAnswer: true)
+  const correctOption = shuffledQuestions[currentQuestion].options.find(option => isCorrectAnswer(option));
+
+  const isCorrect = isCorrectAnswer(selectedOption); // Check if the selected answer is correct
 
   const allAnswers = answerWrapperElement.querySelectorAll(".answer");
-  allAnswers.forEach((answer) => {
-    const optionText = answer.textContent;
-    if (isCorrectAnswer(optionText, correctAnswer)) {
-      answer.classList.add("correct");
-    } else {
-      answer.classList.add("disabled");
-    }
-    answer.removeEventListener("click", selectAnswer);
-  });
 
-  if (isCorrectAnswer(selectedOption, correctAnswer)) {
-    score++;
-    selectedAnswer.classList.add("correct");
-  } else {
+  // Disable further clicks on all answers
+  allAnswers.forEach((answer) => {
+    answer.classList.add("disabled");
+    answer.removeEventListener("click", selectAnswer); // Disable further clicks
+  });
+  // If the selected answer is wrong, find the correct answer by looking for the "c" class
+  if (!isCorrect) {
+    // Find and highlight the correct answer immediately
+    const correctAnswerElement = answerWrapperElement.querySelector(".answer.c");
+    if (correctAnswerElement) {
+      correctAnswerElement.classList.add("correct"); // Highlight the correct answer
+    }
+
     selectedAnswer.classList.add("wrong");
+  } else {
+    selectedAnswer.classList.add("correct");
+    score++; // Increment score for correct answer
   }
 
+
+  // Mark the question as answered and store the selected answer
   shuffledQuestions[currentQuestion].answered = true;
-  shuffledQuestions[currentQuestion].selectedAnswer = selectedOption;
+  shuffledQuestions[currentQuestion].selectedAnswer = Object.keys(selectedOption)[0];
+
+  // Mark the selected answer as correct or incorrect
+  shuffledQuestions[currentQuestion].isCorrect = isCorrect;
 
   nextButton.disabled = false;
 
-  autoNextTimeout = setTimeout(nextQuestion, 400);
+  // Set timeout to move to the next question
+  autoNextTimeout = setTimeout(nextQuestion, 500); // Automatically move to the next question after 400ms
 }
 
-function isCorrectAnswer(option, correctAnswer) {
-  // Helper function to strip HTML tags and trim the string
-  const stripHTML = (str) => str.replace(/<[^>]*>/g, '').trim();
-
-  // If the correctAnswer is an array, check if any stripped version of the option matches any stripped version of the array elements
-  if (Array.isArray(correctAnswer)) {
-    return correctAnswer.some(answer => stripHTML(option) === stripHTML(answer));
-  }
-
-  // If correctAnswer is a string, compare the stripped versions of the option and correctAnswer
-  if (typeof correctAnswer === 'string') {
-    return stripHTML(option) === stripHTML(correctAnswer);
-  }
-
-  // If correctAnswer is an object, handle text and image properties
-  if (typeof correctAnswer === 'object' && correctAnswer !== null) {
-    const strippedOption = stripHTML(option);
-
-    // Check if the object has both text and image properties
-    if (correctAnswer.text && correctAnswer.image) {
-      return (
-        strippedOption.includes(stripHTML(correctAnswer.text)) &&
-        strippedOption.includes(stripHTML(correctAnswer.image))
-      );
-    }
-    
-    // Check if the object has only the text property
-    if (correctAnswer.text) {
-      return strippedOption.includes(stripHTML(correctAnswer.text));
-    }
-    
-    // Check if the object has only the image property
-    if (correctAnswer.image) {
-      return strippedOption.includes(stripHTML(correctAnswer.image));
-    }
-  }
-
-  // Return false if none of the conditions match
-  return false;
-}
 
 function findNextUnansweredQuestion() {
   for (let i = currentQuestion + 1; i < questionLimit; i++) {
@@ -437,6 +525,10 @@ function findNextUnansweredQuestion() {
     }
   }
   return -1;
+}
+
+function countUnansweredQuestions() {
+  return shuffledQuestions.slice(0, questionLimit).filter(q => !q.answered).length;
 }
 
 function nextQuestion() {
@@ -449,7 +541,10 @@ function nextQuestion() {
     currentQuestion = nextUnansweredIndex;
     selectedAnswer = null;
     displayQuestion();
+
+    
   } else {
+    
     if (shuffledQuestions.slice(0, questionLimit).every((question) => question.answered)) {
       clearInterval(timerInterval);
       quizScreen.classList.add("hide");
@@ -476,6 +571,7 @@ function previousQuestion() {
     currentQuestion--;
     selectedAnswer = null;
     displayQuestion();
+    nextButton.disabled = false;
   }
 }
 
@@ -485,6 +581,7 @@ function stopQuiz() {
   endScreen.classList.remove("hide");
   hideQuiz();
   calculateAndDisplayResults();
+  nextButton.disabled = false;
 }
 
 function displayFinalResults() {
@@ -495,15 +592,18 @@ function displayFinalResults() {
   calculateAndDisplayResults();
 }
 
+
 function calculateAndDisplayResults() {
   clearInterval(timerInterval);
-  
-  let correctCount = 0, wrongCount = 0;
-  
+
+  let correctCount = 0, wrongCount = 0, totalScore = 0;
+
+  // Iterate through all questions to count correct and wrong answers
   shuffledQuestions.forEach(q => {
-    if (q.answered) {
-      if (isCorrectAnswer(q.selectedAnswer, q.correctAnswer)) {
+    if (q.answered) { // Only count answered questions
+      if (q.isCorrect) {
         correctCount++;
+        totalScore++; // Add 1 point for each correct answer
       } else {
         wrongCount++;
       }
@@ -521,7 +621,7 @@ function calculateAndDisplayResults() {
 
   // Create an array of results to type out
   const results = [
-    { element: scoreElement, value: score.toString() },
+    { element: scoreElement, value: totalScore.toString() }, // Display total score
     { element: totalScoreElement, value: questionLimit.toString() },
     { element: document.querySelector(".correct-count"), value: correctCount.toString() },
     { element: document.querySelector(".wrong-count"), value: wrongCount.toString() },
@@ -540,6 +640,7 @@ function calculateAndDisplayResults() {
   // Start typing results
   typeOutResults(0);
 }
+
 function endQuiz() {
   displayFinalResults();
 }
@@ -610,6 +711,7 @@ window.addEventListener("message", function (event) {
 
 function closeQuiz() {
   window.parent.postMessage("closeQuiz", "*");
+      window.location.reload();
 }
 
 function typeText(element, text, speed, callback) {
@@ -751,22 +853,14 @@ function showStartScreen(subjectName) {
     quizScreen.classList.add("hide");
   }
 }
-
 window.addEventListener("message", function (event) {
   if (event.data.subjectName) {
     const subjectName = event.data.subjectName;
-    const quizHeading = document
-      .getElementById("quiz-heading")
-      .querySelector(".quiz-heading");
-    const endScreenHeading =
-      document.getElementById("end-screen-heading");
+    const quizHeading = document.getElementById("quiz-heading").querySelector(".quiz-heading");
+    const endScreenHeading = document.getElementById("end-screen-heading");
     const errorMessage = document.getElementById("error-message");
 
-    // Remove the direct text content setting
-    // quizHeading.textContent = subjectName;
-    // endScreenHeading.textContent = subjectName;
-
-    // Apply typing effect to headings
+    // Use the subjectName to set the headings
     typeText(quizHeading, subjectName, 30);
     typeText(endScreenHeading, subjectName, 30);
 
@@ -793,7 +887,7 @@ window.addEventListener("message", function (event) {
   }
 });
 
-// ... (rest of the code remains the same)
+
 
 // Function to clear question history (optional, for testing or user preference)
 function clearQuestionHistory() {
