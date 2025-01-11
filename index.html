@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+</head>
+
+<style>
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+ }
+ /* General body styling */
+ body {
+   margin: 0;
+   display: flex;
+   flex-direction: column;
+   justify-content: space-between;
+   min-height: 100vh;
+   font-family: Arial, sans-serif;
+ }
+ 
+ /* Header styling */
+ .header {
+   text-align: center;
+   margin-top: 20px;
+   font-size: 30px;
+ }
+ 
+ /* Container for buttons, centered vertically and horizontally */
+ .button-container {
+   display: flex;
+   justify-content: center;
+   align-items: flex-start; /* Adjusted alignment */
+   flex-grow: 1;
+   margin-top: 50px; /* Increased margin top for spacing */
+ }
+ 
+ /* General button styling */
+ .button {
+   width: 150px;
+   height: 80px;
+   line-height: 70px;
+   margin: 10px;
+   text-decoration: none;
+   font-size: 30px;
+   color: black;
+   text-align: center;
+   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+   border-radius: 10px;
+   position: relative;
+   opacity: 0; /* Start hidden */
+ }
+ 
+ /* HSC button specific styling */
+ .button-hsc {
+   background-color: #ffecb3;
+   border: 1px solid #d2b48c;
+ }
+ 
+ /* Small text inside buttons */
+ .small-text {
+   display: block;
+   font-size: 13px;
+   line-height: normal;
+   position: absolute;
+   bottom: 5px;
+   width: 100%;
+   text-align: center;
+   color: #000000;
+ }
+ 
+ /* Footer styling */
+ .footer {
+   text-align: center;
+   font-size: 18px;
+   padding: 10px 0;
+   position: absolute;
+   bottom: 0;
+   width: 100%;
+ }
+ 
+ 
+
+
+</style>
+
+
+<body>
+  <!-- Header section with animated text -->
+  <div class="header">
+    <h1 class="typing-text" data-text="Magic MCQ"></h1>
+  </div>
+
+  <!-- Button container with two buttons -->
+  <div class="button-container">
+    <!-- Link to HSC MCQ test page -->
+    <a href="subject.html"  class="button button-hsc" draggable="false" >
+      <span class="typing-text" data-text="HSC"></span>
+      <span class="small-text typing-text" data-text="MCQ test"></span>
+    </a>
+  </div>
+
+  <!-- Footer section -->
+  <div class="footer">
+    <span class="typing-text" data-text="Author by Prince"></span>
+  </div>
+
+  <!-- Boxes section moved to the bottom -->
+  <div class="boxes">
+    <div class="box-hsc"></div>
+  </div>
+
+  
+
+
+
+
+
+  <script>
+    // Typing speed controller
+    const typingSpeed = 40;
+
+    function typeText(element, text, speed, callback) {
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, speed);
+        } else {
+          if (typeof callback === 'function') callback();
+        }
+      }
+      typing();
+    }
+
+   // In index.html
+   window.onload = function() {
+    // Send a message to preload data when the page loads
+    window.postMessage("preloadData", "*");
+  };
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const typingElements = document.querySelectorAll(".typing-text");
+      let delay = 0;
+
+      typingElements.forEach((el, index) => {
+        const text = el.getAttribute("data-text");
+        el.textContent = '';
+        setTimeout(() => {
+          typeText(el, text, typingSpeed, () => {
+            if (el.parentElement.classList.contains('button')) {
+              el.parentElement.style.opacity = '1';
+            }
+            showBox(text);
+          });
+        }, delay);
+        delay += text.length * typingSpeed + 250;
+      });
+    });
+
+    function showBox(text) {
+      const boxes = document.querySelectorAll('.boxes > div');
+      boxes.forEach(box => {
+        if (box.classList.contains(`box-${text.toLowerCase()}`)) {
+          box.classList.add('active');
+        } else {
+          box.classList.remove('active');
+        }
+      });
+    }
+
+    // Additional protection: Prevent dragstart globally if required
+    document.addEventListener('dragstart', (event) => {
+      event.preventDefault();
+  });
+
+  </script>
+
+  
+</body>
+</html>
