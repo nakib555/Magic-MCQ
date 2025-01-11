@@ -1,0 +1,73 @@
+* {
+   -webkit-tap-highlight-color: transparent;
+}
+/* General body styling */
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* Header styling */
+.header {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 30px;
+}
+
+/* Container for buttons, centered vertically and horizontally */
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Adjusted alignment */
+  flex-grow: 1;
+  margin-top: 50px; /* Increased margin top for spacing */
+}
+
+/* General button styling */
+.button {
+  width: 150px;
+  height: 80px;
+  line-height: 70px;
+  margin: 10px;
+  text-decoration: none;
+  font-size: 30px;
+  color: black;
+  text-align: center;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+  border-radius: 10px;
+  position: relative;
+  opacity: 0; /* Start hidden */
+}
+
+/* HSC button specific styling */
+.button-hsc {
+  background-color: #ffecb3;
+  border: 1px solid #d2b48c;
+}
+
+/* Small text inside buttons */
+.small-text {
+  display: block;
+  font-size: 13px;
+  line-height: normal;
+  position: absolute;
+  bottom: 5px;
+  width: 100%;
+  text-align: center;
+  color: #000000;
+}
+
+/* Footer styling */
+.footer {
+  text-align: center;
+  font-size: 18px;
+  padding: 10px 0;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+

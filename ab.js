@@ -150,7 +150,11 @@ const abData = {
               "explanation": "(image/a6e03970-b3a4-4504-9791-405f558d346a-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'অপরিচিতা' গল্পে খাদযুক্ত গহনার নাম কী?",
+=======
+              "question": "'অপরিচিতা' গল্পে খাদযুক্ত গহনার নাম কী?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/c3368f51-624a-49de-8f46-4ecab3690294-image.webp)"
           },
           {
@@ -340,7 +344,11 @@ const abData = {
               "explanation": "(image/c74bd995-9a58-4d90-8839-80bb68f94bf5-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'শুনিয়া আমার মন পুলকের আবেশে ভরিয়া গেল'- কী প্রসঙ্গে বলা হয়েছে?",
+=======
+              "question": "'শুনিয়া আমার মন পুলকের আবেশে ভরিয়া গেল'- কী প্রসঙ্গে বলা হয়েছে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/c56e1483-202c-49eb-a538-a2922bcbf994-image.webp)"
           },
           {
@@ -440,7 +448,11 @@ const abData = {
               "explanation": "(image/2942fd1c-18e1-4834-b74f-38afba3d6eb9-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "কোন গল্প রচনার মাধ্যমে ছোটোগল্প লেখক হিসেবে রবীন্দ্রনাথ ঠাকুরের আত্মপ্রকাশ ঘটে?",
+=======
+              "question": "কোন গল্প রচনার মাধ্যমে ছোটোগল্প লেখক হিসেবে রবীন্দ্রনাথ ঠাকুরের আত্মপ্রকাশ ঘটে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/48ec2b6c-76bb-4dae-a1a9-7fbbd1b0859e-image.webp)"
           },
           {
@@ -514,7 +526,11 @@ const abData = {
               "explanation": "(image/4a64f359-b468-4a67-b4b7-3732e1f378b6-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "বরযাত্রীর দল দক্ষযজ্ঞের পালা সারিয়া বাহির হইয়া গেল।'- ব্যাখ্যা করো।",
+=======
+              "question": "বরযাত্রীর দল দক্ষযজ্ঞের পালা সারিয়া বাহির হইয়া গেল।'- ব্যাখ্যা করো।</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/5d5b5925-3dd5-47cc-b33b-cec11e2027d0-image.webp)"
           },
           {
@@ -638,11 +654,19 @@ const abData = {
               "explanation": "(image/30b7f153-513d-4cd5-9058-4c0917648fe6-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "কে অন্য ধর্মকে ঘৃণা করতে পারে না?",
               "explanation": "(image/1d48d650-6fa2-403c-8b50-82cf70cf389e-image.webp)"
           },
           {
               "question": "'মণীষা' শব্দের অর্থ কী?",
+=======
+              "question": "কে অন্য ধর্মকে ঘৃণা করতে পারে না?</strong></span>",
+              "explanation": "(image/1d48d650-6fa2-403c-8b50-82cf70cf389e-image.webp)"
+          },
+          {
+              "question": "'মণীষা' শব্দের অর্থ কী?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/9cd174b4-cb2f-4ae9-be5d-7a2303bd2c1d-image.webp)"
           },
           {
@@ -788,11 +812,19 @@ const abData = {
               "explanation": "(image/e8c36319-c3f7-4190-a867-ee0d955e5312-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "দীর্ঘদিন ভারতের পরাধীনতার কারণ ব্যাখ্যার নজরুলের মতামত লেখো।",
               "explanation": "(image/570a7bee-21e4-42fe-a0ef-d90f609d2631-image.webp)"
           },
           {
               "question": "<b>'সত্যিকার মানব-কল্যাণ মহৎ চিন্তা-ভাবনারই ফসল'- ব্যাখ্যা করো।",
+=======
+              "question": "দীর্ঘদিন ভারতের পরাধীনতার কারণ ব্যাখ্যার নজরুলের মতামত লেখো।</strong></span>",
+              "explanation": "(image/570a7bee-21e4-42fe-a0ef-d90f609d2631-image.webp)"
+          },
+          {
+              "question": "<b>'সত্যিকার মানব-কল্যাণ মহৎ চিন্তা-ভাবনারই ফসল'- ব্যাখ্যা করো।</b></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": ""
           },
           {
@@ -896,7 +928,11 @@ const abData = {
               "explanation": "(image/172bb2d3-1894-410d-9e1d-f0b1e8c3fe5b-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'সম্মার্জনা' শব্দের অর্থ কী?",
+=======
+              "question": "'সম্মার্জনা' শব্দের অর্থ কী?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/768c411f-885b-4688-9389-535c92bab597-image.webp)"
           },
           {
@@ -974,7 +1010,11 @@ const abData = {
               "explanation": "(image/d75aeb6f-060b-45fa-8b82-7e0dcbcf9b51-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "<b>'অভিশাপ-রথের সারথি' বলতে কী বোঝানো হয়েছে?",
+=======
+              "question": "<b>'অভিশাপ-রথের সারথি' বলতে কী বোঝানো হয়েছে?</b></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": ""
           },
           {
@@ -1070,7 +1110,11 @@ const abData = {
               "explanation": "(image/65f868da-3cf7-4232-ad8b-b446455ae0b3-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'রেডিওগ্রাম'-এর বাংলা প্রতিশব্দ কী?",
+=======
+              "question": "'রেডিওগ্রাম'-এর বাংলা প্রতিশব্দ কী?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/0a509f15-877f-4614-bab0-b5432ead5a6b-image.webp)"
           },
           {
@@ -1100,7 +1144,11 @@ const abData = {
               "explanation": "(image/ee9e5cfc-abf9-4b7d-a2d4-5e57edc8f55b-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "মানিক বন্দ্যোপাধ্যায় এর পিতাপ্রদত্ত নাম কী?",
+=======
+              "question": "মানিক বন্দ্যোপাধ্যায় এর পিতাপ্রদত্ত নাম কী?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/87e37e7a-af28-4310-a011-ae7ef9cc4039-image.webp)"
           },
           {
@@ -1172,7 +1220,11 @@ const abData = {
               "explanation": "(image/ae8bb41e-293a-4867-a630-023dd2997aeb-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "শোষকেরা জনমতের বিরুদ্ধে যেতে ভয় পায় কেন?",
+=======
+              "question": "শোষকেরা জনমতের বিরুদ্ধে যেতে ভয় পায় কেন?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/6e1d8a58-3d55-48e9-8b15-fc535466aa9d-image.webp)"
           },
           {
@@ -1280,7 +1332,11 @@ const abData = {
               "explanation": "(image/02916a3d-75af-4a80-b8bf-14fe88a1fb28-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'রেইনকোট' গল্পে লেখক কোন ঋতুর কথা বলেছেন?",
+=======
+              "question": "'রেইনকোট' গল্পে লেখক কোন ঋতুর কথা বলেছেন?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/ec490be7-b067-4850-a553-eeff3ae87f25-image.webp)"
           },
           {
@@ -1386,7 +1442,11 @@ const abData = {
               "explanation": "(image/5614a004-5b9d-43ab-813e-6392e4334e48-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "বঙ্গবন্ধুর কনিষ্ঠ ভ্রাতা কে?",
+=======
+              "question": "বঙ্গবন্ধুর কনিষ্ঠ ভ্রাতা কে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/e712c6a7-c79c-4134-a622-ae0816c45cfe-image.webp)"
           },
           {
@@ -1402,7 +1462,11 @@ const abData = {
               "explanation": "(image/43f3a539-48d6-4400-ad33-70752d8a1a89-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "নূরুল হুদার কাছে কোন বিষয়টিকে স্রেফ উৎপাত বলে মনে হয়? ব্যাখ্যা করো।",
+=======
+              "question": "নূরুল হুদার কাছে কোন বিষয়টিকে স্রেফ উৎপাত বলে মনে হয়? ব্যাখ্যা করো।</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": ""
           },
           {
@@ -1554,7 +1618,11 @@ const abData = {
               "explanation": "(image/a7d90534-6885-405b-ba89-7488a2854c59-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "মাঠ পেরিয়ে একটু বাঁ দিকে কার কোয়ার্টার?",
+=======
+              "question": "মাঠ পেরিয়ে একটু বাঁ দিকে কার কোয়ার্টার?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/fa2f442c-a62e-4a16-b084-0706d6ae3243-image.webp)"
           },
           {
@@ -1732,7 +1800,11 @@ const abData = {
               "explanation": "(image/d5274361-8006-406f-a8e4-d51a78d74036-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "১৯৭১ সালে মুক্তিযুদ্ধে শিক্ষাবিদ ও বুদ্ধিজীবীরা নিশ্চিন্তে দেশেই অবস্থান করেছিলেন। তাঁদের ধারণা ছিল, পাকিস্তান সেনাবাহিনী অকারণে মানুষ হত্যা করবে না। অন্তত যুদ্ধের নিয়ম, জেনেভা কনভেনশন অনুযায়ী এমনই হওয়ার কথা। কিন্তু পরাজয় নিশ্চিত জেনে ১৩ ও ১৪ ডিসেম্বর আলবদর বাহিনীর সাহায্যে অসংখ্য বুদ্ধিজীবীকে চোখ বেঁধে বাড়ি থেকে তুলে নিয়ে যাওয়া হয়। যাদের কেউ আর ফিরে আসেননি; লাশও খুঁজে পাওয়া যায়নি। তবুও বাংলার স্বাধীনতাকে রুদ্ধ করতে পারেনি পাকিস্তানি শাসকগোষ্ঠী।উদ্দীপকটি 'রেইনকোট' গল্পের কোন বিষয়টিকে উপস্থাপন করেছে? আলোচনা করো।",
+=======
+              "question": "১৯৭১ সালে মুক্তিযুদ্ধে শিক্ষাবিদ ও বুদ্ধিজীবীরা নিশ্চিন্তে দেশেই অবস্থান করেছিলেন। তাঁদের ধারণা ছিল, পাকিস্তান সেনাবাহিনী অকারণে মানুষ হত্যা করবে না। অন্তত যুদ্ধের নিয়ম, জেনেভা কনভেনশন অনুযায়ী এমনই হওয়ার কথা। কিন্তু পরাজয় নিশ্চিত জেনে ১৩ ও ১৪ ডিসেম্বর আলবদর বাহিনীর সাহায্যে অসংখ্য বুদ্ধিজীবীকে চোখ বেঁধে বাড়ি থেকে তুলে নিয়ে যাওয়া হয়। যাদের কেউ আর ফিরে আসেননি; লাশও খুঁজে পাওয়া যায়নি। তবুও বাংলার স্বাধীনতাকে রুদ্ধ করতে পারেনি পাকিস্তানি শাসকগোষ্ঠী।</strong></span>উদ্দীপকটি 'রেইনকোট' গল্পের কোন বিষয়টিকে উপস্থাপন করেছে? আলোচনা করো।</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/d616c96e-7397-457e-8970-717e8273f555-image.webp)"
           },
           {
@@ -1840,11 +1912,19 @@ const abData = {
               "explanation": "(image/3ec8a82f-857e-47ad-b664-27cb5e4fced7-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "শ্রাবণগগন ঘিরে কী ঘুরে?",
               "explanation": "(image/f6fa8a73-638d-421b-9572-778ce3f931bc-image.webp)"
           },
           {
               "question": "কবি নিজেকে কোন সময়ের এলোকেশে ঝড় বলেছেন? ",
+=======
+              "question": "শ্রাবণগগন ঘিরে কী ঘুরে?</strong></span>",
+              "explanation": "(image/f6fa8a73-638d-421b-9572-778ce3f931bc-image.webp)"
+          },
+          {
+              "question": "কবি নিজেকে কোন সময়ের এলোকেশে ঝড় বলেছেন? </strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/6cc9806e-78c2-4177-87f3-17909dcfbdd1-image.webp)"
           },
           {
@@ -1922,7 +2002,11 @@ const abData = {
               "explanation": "(image/612f3b2e-3f76-4799-8ac7-7aa2604f080d-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'ঠাঁই নাই, ঠাঁই নাই- ছোট সে সে তরীআমারি সোনার ধানে গিয়েছে ভরি।'- ব্যাখ্যা করো। ",
+=======
+              "question": "'ঠাঁই নাই, ঠাঁই নাই- ছোট সে সে তরীআমারি সোনার ধানে গিয়েছে ভরি।'- ব্যাখ্যা করো। </strong>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/62fd9a92-690f-4368-8121-2c2a947f6c5d-image.webp)"
           },
           {
@@ -1930,7 +2014,11 @@ const abData = {
               "explanation": "(image/0a385c0e-bd38-4226-829a-f25777fcc6e9-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'বাঁকা<span style=\"background-color: initial; font-size: 1rem;\"> জল' বলতে কী বোঝানো হয়েছে?",
+=======
+              "question": "'বাঁকা<span style=\"background-color: initial; font-size: 1rem;\"> জল' বলতে কী বোঝানো হয়েছে?</span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/1bc064e4-dc4a-47ad-b8e5-1938721a8c43-image.webp)"
           },
           {
@@ -1946,11 +2034,19 @@ const abData = {
               "explanation": "(image/14113a67-e585-4e0c-8639-dc84f191be88-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'আর আছে- আর নাই, গিয়াছি ভরে'- অন্তর্নিহিত কারণ ব্যাখ্যা করো।",
               "explanation": "(image/e0704536-b8e3-4951-8f41-1fcac8f79f9a-image.webp)(image/842dcf91-6a0c-4e7a-a2d0-bf10043b4527-image.webp)"
           },
           {
               "question": "'আমি উপড়ি ফেলিব অধীন বিশ্ব অবহেলে নব সৃষ্টির মহানন্দে।'- ব্যাখ্যা করো।",
+=======
+              "question": "'আর আছে- আর নাই, গিয়াছি ভরে'- অন্তর্নিহিত কারণ ব্যাখ্যা করো।</strong></span>",
+              "explanation": "(image/e0704536-b8e3-4951-8f41-1fcac8f79f9a-image.webp)(image/842dcf91-6a0c-4e7a-a2d0-bf10043b4527-image.webp)"
+          },
+          {
+              "question": "'আমি উপড়ি ফেলিব অধীন বিশ্ব অবহেলে নব সৃষ্টির মহানন্দে।'- ব্যাখ্যা করো।</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/94ecb1ec-8797-41c5-8c99-cbd28412d712-image.webp)"
           },
           {
@@ -2006,7 +2102,11 @@ const abData = {
               "explanation": "(image/612405e4-d892-46e3-ad66-7c812634548c-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "ইন্দ্রাণী-সুত এর হাতে ও কপালে কী থাকে?",
+=======
+              "question": "ইন্দ্রাণী-সুত এর হাতে ও কপালে কী থাকে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/84c3330b-bac9-4873-97cd-f6bc6e32160a-image.webp)"
           },
           {
@@ -2052,7 +2152,11 @@ const abData = {
               "explanation": "(image/4894234d-e532-42e6-9078-88f3f1ed2343-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'আমি আপনারে ছাড়া করি না কাহারে কুর্নিশ'!___ ব্যাখ্যা করো।",
+=======
+              "question": "'আমি আপনারে ছাড়া করি না কাহারে কুর্নিশ'!___ ব্যাখ্যা করো।</strong>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/ad2766e5-5428-4926-8f57-92d4c0bb559b-image.webp)"
           },
           {
@@ -2064,7 +2168,11 @@ const abData = {
               "explanation": "(image/30f8ff82-bf58-4e9d-9317-7b175b01ac76-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'আমি বিদ্রোহী-সুত বিশ্ব বিধাত্রীর'- কথাটি ব্যাখ্যা করো।",
+=======
+              "question": "'আমি বিদ্রোহী-সুত বিশ্ব বিধাত্রীর'- কথাটি ব্যাখ্যা করো।</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/b653f188-22bf-474d-8088-838963dc6a10-image.webp)"
           },
           {
@@ -2242,7 +2350,11 @@ const abData = {
               "explanation": "(image/a765ee18-cba4-462d-a1af-3e66e03dbd1a-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "কার রক্তে বাস্তবের বিশাল চত্বরে ফুল ফোটে?",
+=======
+              "question": "কার রক্তে বাস্তবের বিশাল চত্বরে ফুল ফোটে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/301ae8e8-6d37-4f1a-b633-c01b272487f6-image.webp)"
           },
           {
@@ -2364,7 +2476,11 @@ const abData = {
               "explanation": "(image/3c092294-7123-4ceb-8385-a88e45bcab98-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "<b>'সারাদেশ ঘাতকের অশুভ আস্তানা।'- বলতে কী বোঝানো হয়েছে?",
+=======
+              "question": "<b>'সারাদেশ ঘাতকের অশুভ আস্তানা।'- বলতে কী বোঝানো হয়েছে?</b></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": ""
           },
           {
@@ -2496,7 +2612,11 @@ const abData = {
               "explanation": "(image/a0cd4204-46ae-48db-8d4b-245022e5c519-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "ফেব্রুয়ারী ১৯৬৯' কবিতায় বরকত কোথায় বুক পাতে?",
+=======
+              "question": "ফেব্রুয়ারী ১৯৬৯' কবিতায় বরকত কোথায় বুক পাতে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/035f6bae-2879-47cb-bfa6-e34d1caee2c6-image.webp)"
           },
           {
@@ -2630,7 +2750,11 @@ const abData = {
               "explanation": "(image/bcfd5a89-26b7-4174-9ae8-34af946624a0-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'একুশের কৃষ্ণচূড়া আমাদের চেতনার রং' বলতে কবি কী বুঝিয়েছেন?",
+=======
+              "question": "'একুশের কৃষ্ণচূড়া আমাদের চেতনার রং' বলতে কবি কী বুঝিয়েছেন?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/1e27da5b-6b61-4621-913f-c471eeabed18-image.webp)"
           },
           {
@@ -2710,7 +2834,11 @@ const abData = {
               "explanation": "(image/5ee64881-a327-472c-b25b-c1053ee74153-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "থরে থরে কৃচূড়া কোথায় ফুটেছে?",
+=======
+              "question": "থরে থ</span>রে</span> </span>কৃ</span>ষ্ণ</span>চূ</span>ড়া</span> কোথায় ফুটেছে?</span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/bfc59ff6-db63-4398-879a-1cdce4478944-image.webp)"
           },
           {
@@ -2718,7 +2846,11 @@ const abData = {
               "explanation": "(image/4f3c6981-adaf-4070-bfc4-96db99b544bc-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "কবিভক্ত কবির কাছে কী শুনতে চেয়েছেন?",
+=======
+              "question": "কবিভক্ত কবির কাছে কী শুনতে চেয়েছেন?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/2b8e0f4c-b316-4114-91cf-5941b0e0c916-image.webp)"
           },
           {
@@ -2796,7 +2928,11 @@ const abData = {
               "explanation": "(image/5ab067e1-00f0-4851-8c01-3b15c7456abe-image.webp)"
           },
           {
+<<<<<<< HEAD
               "question": "'উপেক্ষায় ঋতুরাজে কোন কবি দাও তুমি ব্যথা?'- উক্তিটি দিয়ে কী বোঝানো হয়েছে?",
+=======
+              "question": "'উপেক্ষায় ঋতুরাজে কোন কবি দাও তুমি ব্যথা?'- উক্তিটি দিয়ে কী বোঝানো হয়েছে?</strong></span>",
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
               "explanation": "(image/819e1605-f464-4e67-9f28-8ede3c957276-image.webp)"
           },
           {

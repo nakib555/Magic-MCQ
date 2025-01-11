@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highlight 'nakib' and Make Only That Text Non-Editable</title>
+    <style>
+        /* Basic styles for the contenteditable element */
+        #new-question-text {
+            min-height: 50px;
+            overflow-y: hidden;
+            resize: none;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            outline: none;
+        }
+
+        /* Highlighted text style */
+        .highlight {
+            background-color: yellow;
+        }
+
+        /* Non-editable container for highlighted text */
+        .non-editable {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <p id="new-question-text" contenteditable="true" style="color: #aaa;">Enter your question</p>
+
+    <script>
+        const questionText = document.getElementById('new-question-text');
+
+        // Set initial placeholder style
+        if (questionText.textContent.trim() === '') {
+            questionText.textContent = 'Enter your question';
+            questionText.style.color = '#aaa';
+        }
+
+        // Remove placeholder on focus
+        questionText.addEventListener('focus', function() {
+            if (this.textContent.trim() === 'Enter your question') {
+                this.textContent = '';
+                this.style.color = '#000'; // Default text color
+            }
+        });
+
+        // Add placeholder if empty on blur
+        questionText.addEventListener('blur', function() {
+            if (this.textContent.trim() === '') {
+                this.textContent = 'Enter your question';
+                this.style.color = '#aaa'; // Placeholder color
+            }
+        });
+
+        // Function to highlight the word 'nakib' and make it non-editable
+        function highlightWord() {
+            let content = questionText.innerHTML;
+            const regex = /nakib/gi; // Case-insensitive match for 'nakib'
+            const highlighted = content.replace(regex, '<span class="highlight non-editable">nakib</span>');
+            
+            // Replace inner HTML with highlighted content
+            questionText.innerHTML = highlighted;
+            
+            // Set caret to end after highlighting
+            placeCaretAtEnd(questionText);
+        }
+
+        // Function to place caret at the end after highlighting
+        function placeCaretAtEnd(el) {
+            el.focus();
+            if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        // Listen to user input and highlight 'nakib' if it is typed
+        questionText.addEventListener('input', function() {
+            const text = questionText.innerText.trim();
+            if (text.includes('nakib')) {
+                highlightWord();
+            }
+        });
+
+    </script>
+
+</body>
+</html>

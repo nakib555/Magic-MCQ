@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="ইংরেজি ২য় পত্র.css">
+    <title>English 2nd Paper</title>
+</head>
+<body>
+    <a href="subject.html" class="floating-box">
+        <div class="arrow"></div>
+    </a>
+    <div class="container">
+        <div class="header" id="header">
+            <h1 class="typing-text" data-text="Magic MCQ"></h1>
+            <h2 class="typing-text" data-text="English 2nd Paper"></h2>
+            <h3 class="typing-text" data-text="Select the topic"></h3>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Gap filling activities without clues (for prepositions)"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Gap filling activities with clues"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of verbs (right form of verbs and subject-verb agreement as per context)"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of modifiers"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of sentence connectors"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of synonyms and antonyms"></span>
+            <div class="arr"><div></div></div>
+        </div>
+    </div>
+    <script>
+        function typeText(element, text, speed) {
+            let i = 0;
+            function typing() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typing, speed);
+                }
+            }
+            typing();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const typingElements = document.querySelectorAll(".typing-text");
+            typingElements.forEach(el => {
+                const text = el.getAttribute("data-text");
+                el.textContent = '';
+                let speed = 30; // Default typing speed
+                let speedSlider = document.createElement('input');
+                speedSlider.type = 'range';
+                speedSlider.min = 10;
+                speedSlider.max = 100;
+                speedSlider.value = speed;
+                speedSlider.addEventListener('input', () => {
+                    speed = speedSlider.value;
+                    typeText(el, text, speed); // Retype with new speed
+                });
+                // document.body.appendChild(speedSlider); // Add speed slider to the page
+                typeText(el, text, speed);
+            });
+
+            // Adjust container top margin based on header height
+            const header = document.querySelector(".header");
+            const container = document.querySelector(".container");
+            function adjustContainerMargin() {
+                const headerHeight = header.offsetHeight;
+                container.style.marginTop = headerHeight + "px";
+            }
+
+            adjustContainerMargin();
+            window.addEventListener("resize", adjustContainerMargin);
+        });
+    </script>
+</body>
+</html>

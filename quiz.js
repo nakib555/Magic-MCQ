@@ -270,11 +270,14 @@ function displayQuestion() {
   // Process the question text with images and LaTeX
   let content = processTextWithImages(questionData.question);
 
+<<<<<<< HEAD
   // Highlight text inside '....'
   content = content.replace(/'([^']+)'/g, function(_match, p1) {
     return `<span class="highlight">${p1}</span>`;
   });
 
+=======
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
   // Replace <... class="mathy"> with <script type="math/asciimath">, preserving inner content
   content = content.replace(/<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, function(_match, p1) {
     // Strip out any HTML tags inside the mathy element content
@@ -298,6 +301,10 @@ function displayQuestion() {
   // Render MathJax to process ASCII Math
   MathJax.Hub.Queue(["Typeset", MathJax.Hub, questionElement]);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
   // Display the answers
   displayAnswers(questionData);
 
@@ -310,6 +317,7 @@ function displayQuestion() {
 
   // Update the question counter
   updateQuestionCounter();
+<<<<<<< HEAD
 
   // Add CSS for highlighting dynamically
   addHighlightCSS();
@@ -334,6 +342,10 @@ function addHighlightCSS() {
   `;
   document.head.appendChild(style);
 }
+=======
+}
+
+>>>>>>> e8f0884653b9a8e2be577b132b7b049ae14ae4ce
 
 
 
