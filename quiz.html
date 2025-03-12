@@ -19,12 +19,20 @@
         <div class="options">
           <div class="time-limit">
             <label for="time-limit" id="time-limit-label"></label>
-            <input type="number" id="time-limit" value="30" min="30" />
+            <input type="number" id="time-limit" value="30"  />
           </div>
           <div class="question-limit">
             <label for="question-limit" id="question-limit-label"></label>
-            <input type="number" id="question-limit" value="30" min="30" />
+            <input type="number" id="question-limit" value="30"  />
           </div>
+        </div>
+        <div class="dropdown-menu hide" id="lesson-dropdown-menu">
+          <div class="quiz-name-label" id="quiz-name-label"></div>
+          <label for="quiz-lesson" id="quiz-lesson-label"></label> <select
+            id="quiz-lesson"
+          >
+            <option value="সকল পাঠ"></option>
+          </select>
         </div>
         <p class="error-message hide" id="error-message"></p>
         <button class="btn start" id="start-button"></button>
@@ -85,10 +93,6 @@
     <script src="quiz.js"></script>
     <script type="text/javascript" async src="TeX-MML-AM_CHTML.js"></script>
 
-    <script 
-    src="MathJax-2.7.7/MathJax.js">
-</script>
-
-   
+    <script src="MathJax-2.7.7/MathJax.js"></script>
   </body>
 </html>
