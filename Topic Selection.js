@@ -41,7 +41,13 @@ function loadQuestionHistory() {
 async function loadQuestionData() {
   for (const baseUrl of urls) {
     try {
-      const response = await fetch(`${baseUrl}questions.json`);
+      let response;
+      try {
+        response = await fetch(`${baseUrl}questions.json`);
+      } catch (error) {
+        console.error(`Network error fetching from ${baseUrl}questions.json:`, error);
+        continue;
+      }
       if (!response.ok) {
         console.warn(`Failed to fetch from ${baseUrl}questions.json. Status: ${response.status}`);
         continue;
@@ -140,7 +146,7 @@ function startQuiz() {
       shuffledQuestions = selectQuestions(questions, questionLimit, subjectName);
     } else {
       console.error("Subject not found:", subjectName);
-      errorMessage.textContent = "Subject not found. Please refresh the page.";
+      errorMessage.textContent = `Subject "${subjectName}" not found. Please refresh the page.`;
       errorMessage.classList.remove("hide");
       return;
     }
@@ -358,23 +364,27 @@ function isCorrectAnswer(option, correctAnswer) {
   if (Array.isArray(correctAnswer)) {
     return correctAnswer.includes(option);
   }
-  
+
   if (typeof correctAnswer === 'string') {
     return option === correctAnswer;
   }
-  
+
   if (typeof correctAnswer === 'object' && correctAnswer !== null) {
     if (correctAnswer.text && correctAnswer.image) {
-      return option.includes(correctAnswer.text) && option.includes(correctAnswer.image);
+      return (
+        typeof option === 'string' &&
+        option.includes(correctAnswer.text) &&
+        option.includes(correctAnswer.image)
+      );
     }
     if (correctAnswer.text) {
-      return option.includes(correctAnswer.text);
+      return typeof option === 'string' && option.includes(correctAnswer.text);
     }
     if (correctAnswer.image) {
-      return option.includes(correctAnswer.image);
+      return typeof option === 'string' && option.includes(correctAnswer.image);
     }
   }
-  
+
   return false;
 }
 
