@@ -1,4 +1,4 @@
-// abtyping.js with IndexedDB caching
+// abtyping.js with IndexedDB caching and Edit Iframe Integration
 
 // IndexedDB Utility Functions
 const IndexedDBHelper = {
@@ -7,73 +7,148 @@ const IndexedDBHelper = {
   version: 1,
 
   async openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
+      return new Promise((resolve, reject) => {
+          const request = indexedDB.open(this.dbName, this.version);
 
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName);
-        }
-      };
+          request.onupgradeneeded = (event) => {
+              const db = event.target.result;
+              if (!db.objectStoreNames.contains(this.storeName)) {
+                  db.createObjectStore(this.storeName);
+              }
+          };
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = (event) => {
+              console.error("IndexedDB error:", event.target.error);
+              reject(event.target.error);
+          }
+      });
   },
 
   async saveData(data) {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.put(data, 'questionData');
+      try {
+          const db = await this.openDB();
+          return new Promise((resolve, reject) => {
+              const transaction = db.transaction([this.storeName], 'readwrite');
+              const store = transaction.objectStore(this.storeName);
+              const request = store.put(data, 'questionData'); // Use a fixed key
 
-      request.onsuccess = () => resolve(true);
-      request.onerror = () => reject(request.error);
-    });
+              request.onsuccess = () => resolve(true);
+              request.onerror = (event) => {
+                   console.error("IndexedDB save error:", event.target.error);
+                   reject(event.target.error);
+              }
+              transaction.oncomplete = () => {
+                  db.close(); // Close DB after transaction completes
+              };
+              transaction.onerror = (event) => {
+                  console.error("IndexedDB save transaction error:", event.target.error);
+                  reject(event.target.error);
+              };
+          });
+      } catch (error) {
+          console.error("Error opening DB for save:", error);
+          return Promise.reject(error);
+      }
   },
 
   async getData() {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.get('questionData');
+      try {
+          const db = await this.openDB();
+          return new Promise((resolve, reject) => {
+              const transaction = db.transaction([this.storeName], 'readonly');
+              const store = transaction.objectStore(this.storeName);
+              const request = store.get('questionData'); // Use the fixed key
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = (event) => {
+                  console.error("IndexedDB get error:", event.target.error);
+                  reject(event.target.error);
+              }
+              transaction.oncomplete = () => {
+                  db.close(); // Close DB after transaction completes
+              };
+               transaction.onerror = (event) => {
+                  console.error("IndexedDB get transaction error:", event.target.error);
+                  reject(event.target.error);
+              };
+          });
+       } catch (error) {
+          console.error("Error opening DB for get:", error);
+          return Promise.reject(error);
+      }
   }
 };
 
 // Global variable to store question data
 let questionData = null;
 
-// Initialize typing for header elements
-const typingTexts = document.querySelectorAll(".typing-text");
-typingTexts.forEach((text) => {
-  text.textContent = text.dataset.text; // Directly set the text content
-
-  // After the header text is set, show the buttons
-  const abButtons = text.parentElement.querySelectorAll(
-    ".a-button, .b-button, .partial-button"
-  );
-  abButtons.forEach((button) => {
-    button.style.display = "inline-block";
-    button.textContent = button.dataset.text; // Directly set the button text
-  });
-
-  // Adjust container top margin based on header height
-  const container = document.querySelector(".container");
-  container.style.marginTop = `${getHeaderHeight()}px`;
-});
-
 // Function to get the header's height
 function getHeaderHeight() {
   const header = document.querySelector(".header");
-  return header.offsetHeight;
+  return header ? header.offsetHeight : 100; // Provide a fallback height
 }
+
+// Function to set initial text content and button visibility
+function initializeStaticContent() {
+  const staticTexts = document.querySelectorAll(".typing-text");
+  staticTexts.forEach((text) => {
+      if (text.dataset.text) {
+          text.textContent = text.dataset.text;
+      }
+  });
+
+  const subjectDivs = document.querySelectorAll(".subject");
+  subjectDivs.forEach(subjectDiv => {
+      const buttons = subjectDiv.querySelectorAll(".a-button, .b-button, .partial-button");
+      buttons.forEach((button) => {
+          if (button.dataset.text) {
+              button.style.display = "inline-block"; // Make buttons visible
+              button.textContent = button.dataset.text;
+          }
+      });
+  });
+
+   // Handle collapsible box text if needed (though it's populated on expand)
+   document.querySelectorAll(".collapsible-box").forEach(box => {
+       if (box.dataset.text && !box.closest('.collapsible-content')?.classList.contains('active')) {
+           // Optionally set placeholder text or leave empty until expanded
+           // box.textContent = "Click '(Partial)' to view details";
+       }
+   });
+}
+
+// Adjust container margin based on header height
+function adjustContainerMargin() {
+  const container = document.querySelector(".container");
+  if (container) {
+      container.style.marginTop = `${getHeaderHeight()}px`;
+  }
+}
+
+// --- Run Initialization on DOMContentLoaded ---
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("DOM fully loaded and parsed");
+
+  initializeStaticContent(); // Set text/button visibility immediately
+  adjustContainerMargin(); // Adjust margin based on initial header height
+
+  // Add listener for Edit Trigger Button
+  const editTrigger = document.getElementById('edit-trigger-button');
+  if (editTrigger) {
+      console.log("Found edit trigger button, attaching listener.");
+      editTrigger.addEventListener('click', openEdit);
+  } else {
+      console.error("Edit trigger button not found.");
+  }
+
+  // Load question data asynchronously
+  loadQuestionData();
+});
+
+// Adjust margin on resize as well
+window.addEventListener('resize', adjustContainerMargin);
+
 
 function getSubjectMargin() {
   return 7.5; // Example margin value
@@ -87,263 +162,380 @@ function createQuestionAndExplanation(
   index
 ) {
   const contentContainer = document.getElementById(
-    `content-container-${subjectName}`
+      `content-container-${subjectName}`
   );
+  if (!contentContainer) {
+      console.error(`Content container not found for ${subjectName}`);
+      return;
+  }
+
+  // Function to create an image element
+  const createImageElement = (srcPath, altText) => {
+      const img = document.createElement("img");
+      // Basic check for common image extensions - improve if needed
+      if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(srcPath)) {
+           img.src = `image/${srcPath}`; // Assuming images are in an 'image' folder relative to HTML
+      } else {
+          console.warn(`Invalid image path format detected: ${srcPath}`);
+          img.alt = "Invalid image path";
+          // Optionally display placeholder text or hide the element
+          return document.createTextNode(`[Invalid Image: ${srcPath}]`);
+      }
+      img.alt = altText;
+      img.style.maxWidth = "100%"; // Use max-width for responsiveness
+      img.style.height = "auto";
+      img.style.marginTop = "10px";
+      img.draggable = false;
+      img.style.border = "1px solid #ccc";
+      img.style.borderRadius = "4px";
+      return img;
+  };
 
   // Create the question box
   const questionDiv = document.createElement("div");
   questionDiv.classList.add(`${section}-box`);
   questionDiv.id = `${section}-question-${subjectName}-${index}`;
-  questionDiv.style.marginTop = `${getSubjectMargin()}px`;
-  questionDiv.style.marginBottom = `${getSubjectMargin()}px`;
+  // Margins/padding are handled by CSS for .a-box/.b-box
 
   // Handle question text or image
-  if (question.startsWith("(image/")) {
-    const imagePath = question.match(/\(image\/(.+?)\)/)[1]; // Extract image path
-    const questionImage = document.createElement("img");
-    questionImage.src = `image/${imagePath}`; // Add extracted path to src
-    questionImage.alt = "Question Image";
-    questionImage.style.width = "100%";
-    questionImage.style.marginTop = "10px";
-    questionImage.draggable = false;
-
-    questionImage.style.border = "1px solid #ccc"; // Optional styling
-    questionDiv.appendChild(questionImage);
+  const questionPrefix = `${section === "a" ? "ক" : "খ"}. `;
+  if (typeof question === 'string' && question.startsWith("(image/")) {
+      const imagePathMatch = question.match(/\(image\/(.+?)\)/);
+      if (imagePathMatch && imagePathMatch[1]) {
+          questionDiv.appendChild(createImageElement(imagePathMatch[1], "Question Image"));
+      } else {
+           console.warn(`Malformed image tag in question: ${question}`);
+           questionDiv.textContent = questionPrefix + question; // Fallback to text
+      }
   } else {
-    // Add prefix "ক" for section 'a' or "খ" for section 'b'
-    questionDiv.textContent = `${section === "a" ? "ক" : "খ"}. ${question}`;
+      questionDiv.textContent = questionPrefix + (question || ''); // Handle null/undefined/empty question
   }
 
   contentContainer.appendChild(questionDiv);
 
-  // Create the explanation box
-  const explanationDiv = document.createElement("div");
-  explanationDiv.classList.add(`${section}-explanation`);
-  explanationDiv.id = `${section}-explanation-${subjectName}-${index}`;
-  explanationDiv.style.marginTop = `${getSubjectMargin()}px`;
-  explanationDiv.style.marginBottom = `${getSubjectMargin()}px`;
+  // Create the explanation container div (initially hidden)
+  const explanationContainerDiv = document.createElement("div");
+  explanationContainerDiv.classList.add(`${section}-explanation-container`);
+  explanationContainerDiv.id = `${section}-explanation-container-${subjectName}-${index}`;
+  // display: none is handled by CSS
 
+  // Create the explanation box inside the container
   const explanationBox = document.createElement("div");
   explanationBox.classList.add(`${section}-explanation-box`);
   explanationBox.id = `${section}-explanation-box-${subjectName}-${index}`;
+  // Margins/padding handled by CSS
 
   // Handle explanation text or image
-  if (explanation.startsWith("(image/")) {
-    const imagePath = explanation.match(/\(image\/(.+?)\)/)[1]; // Extract image path
-    const explanationImage = document.createElement("img");
-    explanationImage.src = `image/${imagePath}`; // Add extracted path to src
-    explanationImage.alt = "Explanation Image";
-    explanationImage.style.width = "100%";
-    explanationImage.style.marginTop = "10px";
-    explanationImage.draggable = false;
-
-    explanationImage.style.border = "1px solid #ccc"; // Optional styling
-    explanationBox.appendChild(explanationImage);
+  const explanationPrefix = `উত্তর: `;
+   if (typeof explanation === 'string' && explanation.startsWith("(image/")) {
+      const imagePathMatch = explanation.match(/\(image\/(.+?)\)/);
+       if (imagePathMatch && imagePathMatch[1]) {
+          explanationBox.appendChild(createImageElement(imagePathMatch[1], "Explanation Image"));
+       } else {
+           console.warn(`Malformed image tag in explanation: ${explanation}`);
+           const explanationText = document.createElement("div");
+           explanationText.textContent = explanationPrefix + explanation; // Fallback to text
+           explanationBox.appendChild(explanationText);
+       }
   } else {
-    const explanationText = document.createElement("div");
-    explanationText.textContent = `উত্তর: ${explanation}`;
-    explanationText.style.marginBottom = "10px"; // Optional spacing
-    explanationBox.appendChild(explanationText);
+      const explanationText = document.createElement("div");
+      explanationText.textContent = explanationPrefix + (explanation || ''); // Handle null/undefined/empty explanation
+      explanationBox.appendChild(explanationText);
   }
 
-  explanationDiv.appendChild(explanationBox);
-  contentContainer.appendChild(explanationDiv);
+  explanationContainerDiv.appendChild(explanationBox);
+  contentContainer.appendChild(explanationContainerDiv);
 
-  // Add event listener to the question box to toggle explanation visibility
+  // Add event listener to the question box to toggle explanation container visibility
   questionDiv.addEventListener("click", function () {
-    const isHidden = explanationBox.style.display === "none";
-    explanationBox.style.display = isHidden ? "block" : "none";
+      const isHidden = explanationContainerDiv.style.display === "none";
+      explanationContainerDiv.style.display = isHidden ? "block" : "none";
+      console.log(`Toggled explanation for ${subjectName}-${section}-${index} to ${isHidden ? 'visible' : 'hidden'}`);
   });
 }
 
 
 function toggleSection(button, section, subjectName) {
-  const isButtonActive = button.classList.contains("active");
-  const buttons = button.parentElement.querySelectorAll(".a-button, .b-button");
+  console.log(`Toggling section ${section} for subject ${subjectName}`);
+  const parentSubjectDiv = button.closest('.subject');
+  if (!parentSubjectDiv) {
+      console.error("Could not find parent subject div for button:", button);
+      return;
+  }
+
+  const isActive = button.classList.contains("active");
+  const buttons = parentSubjectDiv.querySelectorAll(".a-button, .b-button");
+
+  // Clear existing content for this subject first
+  const contentContainer = document.getElementById(`content-container-${subjectName}`);
+  if (contentContainer) {
+      contentContainer.innerHTML = ''; // Clear previous questions/explanations
+  } else {
+      console.error(`Content container not found for ${subjectName}`);
+      return;
+  }
+
+  // Deactivate all buttons first
   buttons.forEach((b) => b.classList.remove("active"));
 
-  if (!isButtonActive) {
-    button.classList.add("active");
-  }
+  // If the clicked button was not active, activate it and load content
+  if (!isActive) {
+      button.classList.add("active");
+      console.log(`Button for section ${section} activated.`);
 
-  if (questionData) {
-    const questionExplanationArrayA = questionData[subjectName]["a"];
-    const questionExplanationArrayB = questionData[subjectName]["b"];
+      if (questionData && questionData[subjectName] && questionData[subjectName][section]) {
+          const questionExplanationArray = questionData[subjectName][section];
+          console.log(`Loading ${questionExplanationArray.length} items for ${subjectName} - ${section}`);
 
-    const handleVisibility = (array, sectionPrefix) => {
-      array.forEach((item, index) => {
-        const questionId = `${sectionPrefix}-question-${subjectName}-${index}`;
-        const explanationBoxId = `${sectionPrefix}-explanation-box-${subjectName}-${index}`;
-
-        if (!document.getElementById(questionId)) {
-          createQuestionAndExplanation(
-            subjectName,
-            sectionPrefix,
-            item.question,
-            item.explanation,
-            index
-          );
-        } else {
-          const questionElement = document.getElementById(questionId);
-          questionElement.textContent = `${sectionPrefix === "a" ? "ক" : "খ"}. ${
-            item.question
-          }`;
-        }
-
-        const questionElement = document.getElementById(questionId);
-        const explanationBox = document.getElementById(explanationBoxId);
-
-        if (questionElement && explanationBox) {
-          questionElement.style.display = button.classList.contains("active")
-            ? "block"
-            : "none";
-          explanationBox.style.display = "none";
-        }
-      });
-    };
-
-    handleVisibility(questionExplanationArrayA, "a");
-    handleVisibility(questionExplanationArrayB, "b");
-
-    const otherSection = section === "a" ? "b" : "a";
-    [questionExplanationArrayA, questionExplanationArrayB].forEach((array) => {
-      array.forEach((_item, index) => {
-        const questionElement = document.getElementById(
-          `${otherSection}-question-${subjectName}-${index}`
-        );
-        const explanationBoxElement = document.getElementById(
-          `${otherSection}-explanation-box-${subjectName}-${index}`
-        );
-
-        if (questionElement) {
-          questionElement.style.display = "none";
-        }
-
-        if (explanationBoxElement) {
-          explanationBoxElement.style.display = "none";
-        }
-      });
-    });
+          if (questionExplanationArray.length > 0) {
+              questionExplanationArray.forEach((item, index) => {
+                  createQuestionAndExplanation(
+                      subjectName,
+                      section,
+                      item.question,
+                      item.explanation,
+                      index
+                  );
+              });
+          } else {
+               contentContainer.innerHTML = `<p style="text-align: center; margin: 20px 0; color: #555;">No questions available for this section.</p>`;
+          }
+      } else {
+          console.warn(`No data found for subject: ${subjectName}, section: ${section}`);
+          contentContainer.innerHTML = `<p style="text-align: center; margin: 20px 0; color: #888;">Content for this section is currently unavailable.</p>`;
+      }
+  } else {
+      console.log(`Button for section ${section} deactivated.`);
+      // Button was active, clicking again deactivates it. Content is already cleared.
   }
 }
+
 
 function toggleCollapse(button) {
-  const collapsibleContent = button.parentElement.nextElementSibling;
+  const subjectDiv = button.closest('.subject');
+  if (!subjectDiv) return;
 
-  if (collapsibleContent) {
-    const isActive = collapsibleContent.classList.toggle("active");
-    button.classList.toggle("active", isActive);
+  const collapsibleContent = subjectDiv.nextElementSibling;
 
-    if (isActive) {
-      // Populate content from data-text attributes when expanding
-      collapsibleContent.querySelectorAll(".collapsible-box").forEach((box) => {
-        if (box.dataset.text) {
-          box.textContent = box.dataset.text;
-        }
+  if (collapsibleContent && collapsibleContent.classList.contains('collapsible-content')) {
+      const isActive = collapsibleContent.classList.toggle("active");
+      button.classList.toggle("active", isActive);
+      console.log(`Toggled collapsible content for ${subjectDiv.dataset.subjectName} to ${isActive ? 'active' : 'inactive'}`);
 
-        // Set margin-top and margin-bottom dynamically based on subject name
-        const subjectName = box.parentElement.parentElement.dataset.subjectName;
-        const marginValue = getSubjectMargin(subjectName);
-
-        box.style.marginTop = `${marginValue}px`;
-        box.style.marginBottom = `${marginValue * 0.6667}px`;
-      });
-    } else {
-      // Clear content when collapsing
-      collapsibleContent.querySelectorAll(".collapsible-box").forEach((box) => {
-        // Optional: Clear content if needed
-      });
-    }
+      if (isActive) {
+          // Populate content from data-text attributes when expanding
+          collapsibleContent.querySelectorAll(".collapsible-box").forEach((box) => {
+              if (box.dataset.text && box.textContent !== box.dataset.text) { // Avoid re-setting if already correct
+                  box.textContent = box.dataset.text;
+              }
+              // Apply margins (handled by CSS now, but could be adjusted here if needed)
+              // const marginValue = getSubjectMargin();
+              // box.style.marginTop = `${marginValue}px`;
+              // box.style.marginBottom = `${marginValue * 0.6667}px`;
+          });
+      }
+      // Hiding is handled by CSS when 'active' class is removed
+  } else {
+      console.warn("Collapsible content not found immediately after subject div:", subjectDiv);
   }
 }
 
-window.addEventListener("message", function (event) {
-  if (event.data === "closeQuiz") {
-    const quizContainer = document.getElementById("quiz-container");
-    quizContainer.style.display = "none";
-  }
-});
-
+// Function to get subject names
 function getSubjectNames() {
   const subjectNames = [];
   document.querySelectorAll(".subject").forEach((subject) => {
-    subjectNames.push(subject.dataset.subjectName);
+      if (subject.dataset.subjectName) {
+          subjectNames.push(subject.dataset.subjectName);
+      }
   });
+  console.log("Retrieved subject names:", subjectNames);
   return subjectNames;
 }
+
+// Function to open the Quiz Iframe
 function openQuiz(subjectName) {
+  console.log(`Opening quiz for: ${subjectName}`);
   const quizIframe = document.getElementById("quiz-iframe");
   const quizContainer = document.getElementById("quiz-container");
 
   if (!quizIframe || !quizContainer) {
-    console.error("Quiz iframe or container not found.");
-    return;
+      console.error("Quiz iframe or container not found.");
+      return;
   }
 
-  // Set the iframe source immediately
-  quizIframe.src = "quiz.html";
+  quizIframe.src = "quiz.html"; // Set src first
 
-  // Post the message as soon as the iframe content window is available
-  try {
-    // Directly post the message after setting the iframe's src
-    quizIframe.onload = () => {
-      quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*");
-    };
-  } catch (error) {
-    console.error("Failed to post message to the iframe:", error);
-  }
+  quizIframe.onload = () => {
+      console.log("Quiz iframe loaded.");
+      try {
+          quizIframe.contentWindow.postMessage({ subjectName: subjectName }, "*"); // Use specific origin in production
+          console.log("Sent subject name to Quiz iframe.");
+      } catch (error) {
+          console.error("Failed to post message to Quiz iframe:", error);
+      }
+  };
+   quizIframe.onerror = (e) => console.error("Error loading Quiz iframe:", e);
 
-  // Make the quiz container visible immediately
+
   quizContainer.style.display = "block";
 }
 
+// Function to open the Edit Iframe
+function openEdit() {
+  console.log("openEdit function called.");
+  const editContainer = document.getElementById('edit-container');
+  const editIframe = document.getElementById('edit-iframe');
+
+  if (!editContainer || !editIframe) {
+      console.error("Edit iframe or container not found.");
+      return;
+  }
+  console.log("Found edit container and iframe.");
+
+  const subjectNames = getSubjectNames();
+  if (subjectNames.length === 0) {
+      console.warn("No subject names found to send to Edit iframe.");
+      // Optionally alert the user or handle this case
+  }
+
+  console.log("Setting editIframe src to Edit.html");
+  editIframe.src = 'Edit.html'; // Make sure Edit.html is accessible
+
+  editIframe.onload = () => {
+      console.log("Edit iframe finished loading.");
+      try {
+          // Send the subject names to the Edit iframe
+          editIframe.contentWindow.postMessage({ subjectNames: subjectNames }, '*'); // Use specific origin in production
+          console.log("Sent subject names to Edit iframe:", subjectNames);
+      } catch (error) {
+          console.error("Failed to post message to Edit iframe:", error);
+          // Might happen if Edit.html hasn't fully initialized its listener yet
+          // Could implement a retry mechanism or a handshake if needed
+      }
+  };
+
+  editIframe.onerror = (e) => {
+      console.error("Error loading Edit iframe:", e);
+      // Optionally hide the container and show an error message to the user
+      editContainer.style.display = 'none';
+      alert("Error loading the editor. Please check the console for details.");
+  };
+
+  console.log("Setting editContainer display to block.");
+  editContainer.style.display = 'block';
+  console.log("editContainer display style is now:", editContainer.style.display);
+}
+
+// Main Message Listener
+window.addEventListener("message", function (event) {
+  // --- Security Best Practice: Check the origin ---
+  // Replace 'http://localhost:5500' with the actual origin of your Edit.html and Quiz.html if different
+  // Or use a more dynamic check if origins can vary
+  // const expectedOrigin = window.location.origin;
+  // if (event.origin !== expectedOrigin) {
+  //     console.warn(`Message rejected from origin: ${event.origin}. Expected: ${expectedOrigin}`);
+  //     return;
+  // }
+  // console.log("Message received from origin:", event.origin, "Data:", event.data); // Log received messages
+
+  const quizContainer = document.getElementById("quiz-container");
+  const editContainer = document.getElementById("edit-container");
+  const quizIframe = document.getElementById("quiz-iframe");
+  const editIframe = document.getElementById("edit-iframe");
+
+  if (event.data === "closeQuiz") {
+      console.log("Received 'closeQuiz' message.");
+      if (quizContainer) {
+          quizContainer.style.display = "none";
+      }
+      if (quizIframe) {
+          quizIframe.src = 'about:blank'; // Reset src to clear state
+      }
+  } else if (event.data === "closeEdit") {
+      console.log("Received 'closeEdit' message.");
+      if (editContainer) {
+          editContainer.style.display = "none";
+      }
+      if (editIframe) {
+          editIframe.src = 'about:blank'; // Reset src to clear state
+      }
+  }
+  // Handle other potential messages if needed
+});
+
 
 async function loadQuestionData() {
+  console.log("Attempting to load question data...");
   try {
-    // First, load data from IndexedDB
-    const cachedData = await IndexedDBHelper.getData();
+      // 1. Try loading from IndexedDB first
+      const cachedData = await IndexedDBHelper.getData();
 
-    // Check if abData exists and update IndexedDB accordingly
-    if (typeof abData !== "undefined" && abData) {
-      questionData = abData; // Load abData as the source of truth
-
-      // If no cached data exists or if cached data differs from abData
-      if (!cachedData || JSON.stringify(cachedData) !== JSON.stringify(abData)) {
-        console.log("Updating IndexedDB with new abData...");
-        await IndexedDBHelper.saveData(abData);
+      if (cachedData) {
+          console.log("Using cached data from IndexedDB.");
+          questionData = cachedData;
+          return; // Data loaded successfully
       } else {
-        console.log("Cached data matches abData. No update needed.");
+           console.log("No cached data found in IndexedDB.");
       }
-      return;
-    }
 
-    // If abData is not available, fall back to cached data
-    if (cachedData) {
-      console.log("Using cached data from IndexedDB.");
-      questionData = cachedData;
-      return;
-    }
+      // 2. If no cached data, try fetching from a potential source (e.g., a JSON file or API)
+      //    Replace 'ab.json' with your actual data source if applicable.
+      //    This fetch is commented out by default, assuming data might be local or cached.
+      /*
+      try {
+          console.log("Attempting to fetch fresh data from ab.json...");
+          const response = await fetch('ab.json'); // Adjust path if needed
+          if (response.ok) {
+              const fetchedData = await response.json();
+              console.log("Fetched fresh data successfully.");
+              questionData = fetchedData;
+              await IndexedDBHelper.saveData(fetchedData); // Cache the fresh data
+              console.log("Cached fresh data to IndexedDB.");
+              return; // Data loaded successfully
+          } else {
+              console.warn(`Failed to fetch fresh data (Status: ${response.status}). Trying local variable.`);
+          }
+      } catch (fetchError) {
+          console.warn("Network error fetching data. Trying local variable.", fetchError);
+      }
+      */
 
-    // If neither abData nor cached data is available
-    console.error("No abData available and no cached data found.");
-    const errorMessage = document.getElementById("error-message");
-    if (errorMessage) {
-      errorMessage.textContent =
-        "Error loading questions. Please refresh the page.";
-      errorMessage.classList.remove("hide");
-    }
+      // 3. Fallback: If fetch fails or is skipped, try loading from a local 'abData' variable
+      //    (This requires 'abData' to be defined globally *before* this script runs)
+      if (typeof abData !== "undefined" && abData) {
+          console.log("Using local 'abData' variable.");
+          questionData = abData;
+          await IndexedDBHelper.saveData(abData); // Cache it for next time
+          console.log("Cached local 'abData' to IndexedDB.");
+          return; // Data loaded successfully
+      }
+
+      // 4. If all methods fail
+      console.error("FATAL: No question data source found (cache, fetch, or local variable).");
+      displayLoadError("Error: Could not load question data. Please ensure data is available or try refreshing.");
+
   } catch (error) {
-    console.error("Error loading question data:", error);
-    const errorMessage = document.getElementById("error-message");
-    if (errorMessage) {
-      errorMessage.textContent =
-        "Error loading questions. Please refresh the page.";
-      errorMessage.classList.remove("hide");
-    }
+      console.error("Error during question data loading process:", error);
+      displayLoadError("An error occurred while loading question data. Please check the console.");
   }
 }
 
+function displayLoadError(message) {
+   const container = document.querySelector('.container');
+   if (container) {
+       // Prepend error message to avoid overwriting content if some exists
+       const errorElement = document.createElement('p');
+       errorElement.style.color = 'red';
+       errorElement.style.backgroundColor = '#ffebee';
+       errorElement.style.border = '1px solid red';
+       errorElement.style.padding = '10px';
+       errorElement.style.margin = '20px';
+       errorElement.style.textAlign = 'center';
+       errorElement.textContent = message;
+       container.prepend(errorElement); // Add error at the top
+   }
+}
 
-
-// Load initial data when the page loads
-document.addEventListener('DOMContentLoaded', loadQuestionData);
+// Note: The 'abData' variable mentioned in loadQuestionData is assumed to be
+// potentially defined in a separate file or inline script loaded before this one.
+// If you are *not* using such a variable, you can remove that part of the logic.
