@@ -1,256 +1,323 @@
 /* quiz.js */
-let questions = [],
-    currentQuestion = 0,
-    score = 0,
-    timeRemaining = 0,
-    timerInterval,
-    selectedAnswer = null,
-    questionLimit = 15,
-    typingInterval,
-    autoNextTimeout,
-    shuffledQuestions = [],
-    data = null,
-    selectedLesson = "সকল পাঠ", // Track selected lesson,
-    isPaused = false; // Track pause state
+// --- Global Variables ---
+// State Management
+let questions = [], // Holds questions for the *current* subject after loading
+  currentQuestion = 0, // Index of the currently displayed question in shuffledQuestions
+  score = 0, // User's score for the current quiz session
+  timeRemaining = 0, // Time left in seconds
+  timerInterval, // Interval ID for the main quiz timer
+  selectedAnswer = null, // Potentially obsolete - state tracked in shuffledQuestions
+  questionLimit = 30, // Default, updated from input, max number of questions for the quiz
+  typingInterval, // Interval ID for the deprecated typeText effect
+  autoNextTimeout, // Timeout ID for automatically moving to the next question
+  shuffledQuestions = [], // Array of questions selected and shuffled for the current quiz instance
+  data = null, // Holds the entire fetched questions data (all subjects/sections)
+  selectedLesson = "সকল পাঠ", // Tracks selected lesson/filter ('সকল পাঠ' is "All Lessons")
+  isPaused = false, // Tracks pause state, primarily for the explanation delay/pause button
+  subjectName, // Name of the current subject being quizzed
+  questionHistory = {}; // In-memory cache of question history loaded from/saved to IndexedDB
 
-// Declare element variables, but assign them later in DOMContentLoaded
+// DOM Element References (initialized in DOMContentLoaded)
 let startScreenHeading = null,
-    startScreen = null,
-    quizScreen = null,
-    endScreen = null,
-    questionElement = null,
-    answerWrapperElement = null,
-    nextButton = null,
-    scoreElement = null,
-    totalScoreElement = null,
-    progressText = null,
-    timer = null,
-    previousButton = null,
-    stopButton = null,
-    pauseButton = null,
-    errorMessage = null,
-    startButton = null,
-    quizHeading = null,
-    uContainer = null,
-    numberProgressContainer = null,
-    questionContainer = null,
-    questionLimitInput = null,
-    timeLimitInput = null,
-    quizLessonDropdown = null,
-    lessonDropdownMenu = null;
-
-let subjectName,
-    questionHistory = {};
-// nextButton.disabled = false; // Cannot set property here, nextButton is null
+  startScreen = null,
+  quizScreen = null,
+  endScreen = null,
+  questionElement = null,
+  answerWrapperElement = null,
+  nextButton = null,
+  scoreElement = null,
+  totalScoreElement = null,
+  progressText = null,
+  timer = null, // The timer container div
+  previousButton = null,
+  stopButton = null,
+  pauseButton = null,
+  errorMessage = null,
+  startButton = null,
+  quizHeading = null,
+  uContainer = null, // Seems unused? Review needed.
+  numberProgressContainer = null, // Container for "Question X of Y"
+  questionContainer = null, // Container for question h5
+  questionLimitInput = null,
+  timeLimitInput = null,
+  quizLessonDropdown = null,
+  lessonDropdownMenu = null; // The container div for the lesson dropdown label and select
 
 // IndexedDB setup
 const dbName = "quizHistoryDB";
 const storeName = "questionHistoryStore";
-let db;
+let db; // Holds the IndexedDB database connection
 
+// --- IndexedDB Functions ---
+/**
+ * Opens (or creates) the IndexedDB database.
+ * @returns {Promise<IDBDatabase>} A promise that resolves with the database connection.
+ */
 function openDatabase() {
-    return new Promise((resolve, reject) => {
-        if (db) {
-            resolve(db);
-            return;
-        }
-        const request = indexedDB.open(dbName, 1);
+  return new Promise((resolve, reject) => {
+    if (db) {
+      resolve(db);
+      return;
+    }
+    const request = indexedDB.open(dbName, 1); // Version 1
 
-        request.onerror = (event) => {
-            console.error("IndexedDB error:", event);
-            reject("IndexedDB failed to open");
-        };
+    request.onerror = (event) => {
+      console.error("IndexedDB error:", event.target.error);
+      reject(`IndexedDB failed to open: ${event.target.errorCode}`);
+    };
 
-        request.onsuccess = (event) => {
-            db = event.target.result;
-            resolve(db);
-        };
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      console.log("IndexedDB opened successfully.");
+      resolve(db);
+    };
 
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(storeName)) {
-                db.createObjectStore(storeName);
-            }
-        };
-    });
+    request.onupgradeneeded = (event) => {
+      console.log("IndexedDB upgrade needed.");
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(storeName)) {
+        db.createObjectStore(storeName); // Simple key-value store using "questionHistory" as the key
+        console.log(`Object store '${storeName}' created.`);
+      }
+    };
+  });
 }
 
+/**
+ * Retrieves the entire question history object from IndexedDB.
+ * @returns {Promise<object>} A promise that resolves with the history object, or an empty object if none exists or an error occurs.
+ */
 async function getQuestionHistoryFromDB() {
+  try {
     await openDatabase();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, "readonly");
-        const store = transaction.objectStore(storeName);
-        const request = store.get("questionHistory");
-
-        request.onerror = (event) => {
-            console.error("Error getting question history from IndexedDB:", event);
-            reject(event);
-        };
-
-        request.onsuccess = (event) => {
-            resolve(event.target.result || {}); // Return empty object if no history found
-        };
-    });
-}
-
-async function saveQuestionHistoryToDB(history) {
-    await openDatabase();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, "readwrite");
-        const store = transaction.objectStore(storeName);
-        const request = store.put(history, "questionHistory"); // Save history as an object
-
-        request.onerror = (event) => {
-            console.error("Error saving question history to IndexedDB:", event);
-            reject(event);
-        };
-
-        request.onsuccess = () => {
-            resolve();
-        };
-    });
-}
-
-function stripHTML(html) {
-    let temp = document.createElement("div");
-    temp.innerHTML = html;
-    return temp.textContent || temp.innerText || "";
-}
-
-// Functions for managing IndexedDB history
-async function saveQuestionHistory() {
-    try {
-        await saveQuestionHistoryToDB(questionHistory);
-    } catch (error) {
-        console.error("Error saving question history:", error);
-    }
-}
-
-async function loadQuestionHistory() {
-    try {
-        questionHistory = await getQuestionHistoryFromDB();
-        if (!questionHistory) {
-            questionHistory = {};
-        }
-        if (typeof questionHistory !== "object" || questionHistory === null) {
-            questionHistory = {}; // Ensure it's an object in case of corruption
-        }
-    } catch (error) {
-        console.error("Error loading question history:", error);
-        questionHistory = {}; // Initialize to empty object on error
-        displayError( // Use displayError safely
-            "Error loading question history. Starting with a clean slate."
-        );
-    }
-}
-
-async function loadQuestionData() {
-    // Instead of fetching, just return the questionsData
-    // Ensure questionsData is available globally or passed correctly
-    if (typeof questionsData === 'undefined') {
-        console.error("questionsData is not defined. Make sure it's loaded before calling loadQuestionData.");
-        return null; // Or handle the error appropriately
-    }
-
-    if (questionsData && questionsData.sections) { // Add null check for questionsData
-        questionsData.sections.forEach((section) => {
-            if (!questionHistory[section.section]) {
-                // Initialize history for sections if not present
-                questionHistory[section.section] = {}; // History for each section is now an object
-            }
-        });
-        return questionsData;
-    } else {
-        console.error("questionsData or questionsData.sections is missing.");
-        return null;
-    }
-
-
-}
-
-function displayError(message) {
-    if (errorMessage) { // Check if errorMessage is assigned
-        errorMessage.textContent = message;
-        errorMessage.classList.remove("hide");
-        errorMessage.style.opacity = 1;
-    } else {
-        console.error("Error Message Element not found! Message:", message);
-    }
-}
-
-// Function to restrict input to numbers only
-function restrictToNumbers(inputElement) {
-    if (!inputElement) return; // Add null check
-    inputElement.addEventListener("input", function () {
-        this.value = this.value.replace(/[^0-9]/g, ""); // Replace non-digits with empty string
-    });
-
-    inputElement.addEventListener("paste", function (event) {
-        let pasteData = (event.clipboardData || window.clipboardData).getData(
-            "text"
-        );
-        if (pasteData.match(/[^0-9]/g)) {
-            event.preventDefault(); // Prevent paste if non-digits
-        }
-    });
-}
-
-// Load data, but element assignments and listeners happen in DOMContentLoaded
-loadQuestionData().then((fetchedData) => {
-    if (fetchedData) {
-        data = fetchedData;
-        // Don't enable start button here, do it in DOMContentLoaded check
-    } else {
-        console.error("Data is null or failed to load.");
-        // Can't display error yet as errorMessage might be null
-        // displayError("Error loading questions. Please refresh the page.");
-    }
-});
-
-
-function validateInputs() {
-    // Add null checks for input elements
-    if (!questionLimitInput || !timeLimitInput) {
-        console.warn("Input elements not ready for validation.");
+      if (!db) {
+        console.error("getQuestionHistoryFromDB: Database connection not available.");
+        resolve({}); // Resolve with empty object if DB connection failed
         return;
+      }
+      const transaction = db.transaction(storeName, "readonly");
+      const store = transaction.objectStore(storeName);
+      // Using a single known key "questionHistory" to store the entire history object
+      const request = store.get("questionHistory");
+
+      request.onerror = (event) => {
+        console.error("Error getting question history from IndexedDB:", event.target.error);
+        reject(event.target.error); // Reject the promise on error
+      };
+
+      request.onsuccess = (event) => {
+        console.log("Question history retrieved from IndexedDB.");
+        resolve(event.target.result || {}); // Return empty object if no history found
+      };
+    });
+  } catch (error) {
+      console.error("Failed to open database for reading history:", error);
+      return {}; // Return empty object on failure to open DB
+  }
+}
+
+/**
+ * Saves the entire question history object to IndexedDB.
+ * @param {object} history The question history object to save.
+ * @returns {Promise<void>} A promise that resolves when saving is complete, or rejects on error.
+ */
+async function saveQuestionHistoryToDB(history) {
+    try {
+        await openDatabase();
+        return new Promise((resolve, reject) => {
+            if (!db) {
+                console.error("saveQuestionHistoryToDB: Database connection not available.");
+                reject("Database connection not available."); // Reject promise if DB connection failed
+                return;
+            }
+            const transaction = db.transaction(storeName, "readwrite");
+            const store = transaction.objectStore(storeName);
+            // Using a single known key "questionHistory" to store the entire history object
+            const request = store.put(history, "questionHistory");
+
+            request.onerror = (event) => {
+                console.error("Error saving question history to IndexedDB:", event.target.error);
+                reject(event.target.error); // Reject the promise on error
+            };
+
+            request.onsuccess = () => {
+                console.log("Question history saved to IndexedDB.");
+                resolve(); // Resolve the promise on success
+            };
+        });
+    } catch (error) {
+        console.error("Failed to open database for saving history:", error);
+        return Promise.reject(error); // Reject the promise on failure to open DB
     }
+}
 
-    const questionLimitValue = parseInt(questionLimitInput.value);
-    const timeLimitValue = parseInt(timeLimitInput.value);
-    const maxQuestions = parseInt(questionLimitInput.max); // Get dynamic max value
-    const minQuestions = parseInt(questionLimitInput.min); // Get dynamic min value
+// --- Utility Functions ---
+/**
+ * Removes HTML tags from a string.
+ * @param {string} html The HTML string.
+ * @returns {string} The text content without HTML tags.
+ */
+function stripHTML(html) {
+  let temp = document.createElement("div");
+  temp.innerHTML = html;
+  return temp.textContent || temp.innerText || "";
+}
 
-    let errorMessageText = "";
+/**
+ * Checks if a string contains an image marker like (image/...) or an <img> tag.
+ * @param {string} text The text to check.
+ * @returns {boolean} True if an image marker or tag is found.
+ */
+function containsImageMarker(text) {
+  if (typeof text !== 'string' || !text) {
+    return false;
+  }
+  const imageRegex = /(\(image\/[^\)]+\))|<img\s+[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/i;
+  return imageRegex.test(text);
+}
 
-    if (isNaN(questionLimitValue) || isNaN(timeLimitValue)) {
-        errorMessageText = "Please enter valid question and time limits.";
-    } else if (
-        questionLimitValue < minQuestions ||
-        timeLimitValue < minQuestions
-    ) {
-        errorMessageText = `Question and time limit must be at least ${minQuestions}.`; // Dynamic error message
-    } else if (
-        questionLimitValue > maxQuestions ||
-        timeLimitValue > maxQuestions
-    ) {
-        // Check if maxQuestions is a valid number before comparison
-        if (!isNaN(maxQuestions) && maxQuestions > 0) {
-             errorMessageText = `Question and time limits cannot exceed ${maxQuestions}.`; // Dynamic error message - NEW MESSAGE
-        } else {
-            // Handle case where maxQuestions might not be set yet or is invalid
-             errorMessageText = `Please select a subject and lesson first.`;
-        }
+/**
+ * Checks if a string contains an <svg> tag.
+ * @param {string} text The text to check.
+ * @returns {boolean} True if an <svg> tag is found.
+ */
+function containsSVGMarker(text) {
+  if (typeof text !== 'string' || !text) {
+    return false;
+  }
+  const svgRegex = /<svg[\s>]/i;
+  return svgRegex.test(text);
+}
+
+/**
+ * Converts newline characters (\n) to HTML <br> tags.
+ * @param {string} text The text to convert.
+ * @returns {string} The text with newlines replaced by <br>.
+ */
+function convertNewlinesToHtml(text) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  return text.replace(/\n/g, "<br>");
+}
+
+/**
+ * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+ * @param {Array<any>} array The array to shuffle.
+ * @returns {Array<any>} The shuffled array.
+ */
+function shuffleArray(array) {
+  const shuffled = [...array]; // Create a shallow copy
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Attaches event listeners to an input element to restrict input to numbers only.
+ * @param {HTMLInputElement} inputElement The input element.
+ */
+function restrictToNumbers(inputElement) {
+  if (!inputElement) return;
+  inputElement.addEventListener("input", function () {
+    this.value = this.value.replace(/[^0-9]/g, ""); // Allow only digits
+  });
+
+  inputElement.addEventListener("paste", function (event) {
+    let pasteData = (event.clipboardData || window.clipboardData)?.getData("text");
+    if (pasteData && /[^0-9]/.test(pasteData)) {
+      event.preventDefault();
     }
+  });
+}
 
-    if (startButton) { // Check if startButton is defined before accessing disabled property
-        startButton.disabled = !!errorMessageText;
+// --- Core Application Logic ---
+
+/**
+ * Loads the main question data from the global `questionsData` variable.
+ * Initializes the structure for question history if not already present.
+ * @returns {Promise<object|null>} The loaded data object or null on failure.
+ */
+async function loadQuestionData() {
+  if (typeof questionsData === "undefined") {
+    console.error("Global 'questionsData' is not defined.");
+    displayError("Failed to load question data. Please ensure data source is available.");
+    return null;
+  }
+  if (!questionsData || typeof questionsData !== 'object' || !Array.isArray(questionsData.sections)) {
+    console.error("Invalid 'questionsData' structure. Expected { sections: [...] }.", questionsData);
+    displayError("Invalid question data format.");
+    return null;
+  }
+
+  console.log("Question data structure appears valid.");
+  // Ensure history object has keys for each section defined in the data
+  questionsData.sections.forEach((section) => {
+      if (section && section.section && !questionHistory[section.section]) {
+          questionHistory[section.section] = {}; // Initialize history for the subject
+      }
+  });
+  return questionsData;
+}
+
+/**
+ * Loads the question history from IndexedDB into the global `questionHistory` variable.
+ */
+async function loadQuestionHistory() {
+  try {
+    const loadedHistory = await getQuestionHistoryFromDB();
+    if (typeof loadedHistory === "object" && loadedHistory !== null) {
+        questionHistory = loadedHistory;
+        console.log("Question history loaded successfully from IndexedDB.");
     } else {
-        console.warn("startButton is null, cannot update disabled state.");
+        console.warn("Invalid history data loaded from DB, resetting to empty object.");
+        questionHistory = {};
     }
-    // Use displayError safely
-    if (errorMessageText) {
-        displayError(errorMessageText);
-    } else if (errorMessage) { // Hide only if errorMessage exists
+  } catch (error) {
+    console.error("Error loading question history:", error);
+    questionHistory = {}; // Initialize to empty object on error
+    displayError("Error loading question history. Progress tracking might be affected.");
+  }
+}
+
+/**
+ * Saves the current state of the global `questionHistory` variable to IndexedDB.
+ */
+async function saveQuestionHistory() {
+  try {
+    await saveQuestionHistoryToDB(questionHistory);
+    console.log("Attempted to save question history to IndexedDB.");
+  } catch (error) {
+    console.error("Error saving question history:", error);
+    // Optionally inform user, but might be too noisy
+    // displayError("Could not save quiz progress.");
+  }
+}
+
+/**
+ * Displays an error message in the designated error message element.
+ * @param {string} message The error message to display.
+ */
+function displayError(message) {
+  if (errorMessage) {
+    errorMessage.textContent = message;
+    errorMessage.classList.remove("hide");
+    errorMessage.style.opacity = 1;
+    console.error("Displayed Error:", message);
+  } else {
+    console.error("Error Message Element not found! Message:", message);
+    alert(`Error: ${message}`); // Fallback
+  }
+}
+
+/**
+ * Hides the error message element.
+ */
+function hideError() {
+    if (errorMessage && !errorMessage.classList.contains("hide")) {
         errorMessage.textContent = "";
         errorMessage.style.opacity = 0;
         errorMessage.classList.add("hide");
@@ -258,1484 +325,1384 @@ function validateInputs() {
 }
 
 
-async function startQuiz() {
-    // Make startQuiz async
-    if (!questionLimitInput || !timeLimitInput || !quizLessonDropdown || !startButton || !startScreen || !quizScreen || !quizHeading) {
-        console.error("Required elements not ready to start quiz.");
-        displayError("Initialization error. Please refresh.");
-        return;
-    }
+/**
+ * Validates the question limit and time limit inputs on the start screen.
+ * Enables/disables the start button based on validity.
+ * Displays specific error messages.
+ * @returns {boolean} True if inputs are valid, false otherwise.
+ */
+function validateInputs() {
+  if (!questionLimitInput || !timeLimitInput || !startButton || !errorMessage) {
+    console.warn("Input elements not ready for validation.");
+    return false;
+  }
 
-    const questionLimitValue = parseInt(questionLimitInput.value);
-    const timeLimitValue = parseInt(timeLimitInput.value);
-    startButton.disabled = false; // Can assume startButton exists if we got here
+  if (errorMessage && !errorMessage.textContent.includes("No questions available")) {
+     hideError();
+  }
 
-    // Re-validate right before starting
-     validateInputs();
-     if (startButton.disabled) { // Check disabled property
-         console.log("Start button disabled due to validation errors.");
-         return; // Stop if validation fails
-     }
+  const questionLimitValue = parseInt(questionLimitInput.value);
+  const timeLimitValue = parseInt(timeLimitInput.value);
+  const maxQuestions = parseInt(questionLimitInput.max);
+  const minQuestions = parseInt(questionLimitInput.min);
 
+  let errorMsg = "";
+  let isValid = true;
 
-    questionLimit = questionLimitValue;
-    // Set initial timeRemaining HERE, not in startTimer()
-    timeRemaining = timeLimitValue * 60;
-    currentQuestion = 0;
-    score = 0;
-    selectedAnswer = null;
-    isPaused = false; // Ensure quiz starts unpaused
-    selectedLesson = quizLessonDropdown.value; // Get the selected lesson here
+  if (isNaN(questionLimitValue) || questionLimitValue <= 0) {
+    errorMsg = "Please enter a valid number of questions (must be > 0).";
+    isValid = false;
+  } else if (isNaN(timeLimitValue) || timeLimitValue <= 0) {
+    errorMsg = "Please enter a valid time limit in minutes (must be > 0).";
+    isValid = false;
+  } else if (!isNaN(minQuestions) && (questionLimitValue < minQuestions || timeLimitValue < minQuestions)) {
+    errorMsg = `Number of questions and time limit must be at least ${minQuestions}.`;
+    isValid = false;
+  } else if (!isNaN(maxQuestions) && maxQuestions > 0 && (questionLimitValue > maxQuestions || timeLimitValue > maxQuestions)) {
+    errorMsg = `Number of questions and time limit cannot exceed the ${maxQuestions} available for this filter.`;
+    isValid = false;
+  } else if (isNaN(maxQuestions) || maxQuestions <= 0){
+      // This case implies no questions are available for the filter
+      isValid = false; // Keep start button disabled
+      // Error message should be handled by updateMinLimitsForLesson
+  }
 
-    if (!data) {
-         console.error("Quiz data not loaded. Cannot start quiz.");
-         displayError("Quiz data failed to load. Please refresh.");
-         return;
-     }
+  startButton.disabled = !isValid;
 
-    if (subjectName) {
-        const section = data.sections.find((s) => s.section === subjectName);
+  if (!isValid && errorMsg) {
+    displayError(errorMsg);
+  } else if (isValid && errorMessage && errorMessage.textContent && !errorMessage.textContent.includes("No questions available")) {
+      hideError();
+  }
 
-        if (section) {
-            questions = section.questions;
-
-            // Filter questions by selected lesson
-            let filteredQuestions = questions;
-            if (selectedLesson !== "সকল পাঠ") {
-                filteredQuestions = questions.filter(
-                    (q) => q && q.lesson === selectedLesson // Add safety check for q
-                );
-            }
-
-             // Add safety check for filteredQuestions being an array
-             if (!Array.isArray(filteredQuestions)) {
-                 console.error("Filtered questions is not an array:", filteredQuestions);
-                 displayError("Error filtering questions.");
-                 return;
-             }
-
-
-            if (filteredQuestions.length === 0 && selectedLesson !== "সকল পাঠ") {
-                displayError(`No questions available for the lesson: ${selectedLesson}. Please select 'সকল পাঠ' or a different lesson.`);
-                return; // Stop quiz start if no questions for selected lesson
-            } else if (
-                filteredQuestions.length === 0 &&
-                selectedLesson === "সকল পাঠ"
-            ) {
-                displayError(`No questions available for 'সকল পাঠ'. Please check question data.`);
-                return; // Stop quiz start if no questions for সকল পাঠ
-            } else {
-                 if (errorMessage) errorMessage.classList.add("hide"); // Ensure error message is hidden if questions are found
-            }
-
-             // Check if the requested question limit exceeds available filtered questions
-             if (questionLimitValue > filteredQuestions.length) {
-                 displayError(`Requested ${questionLimitValue} questions, but only ${filteredQuestions.length} available for "${selectedLesson}". Limit adjusted.`);
-                 questionLimit = filteredQuestions.length; // Adjust limit
-                 questionLimitInput.value = questionLimit; // Update input display
-                 // Adjust time limit proportionally or keep it as set? Decide based on requirements.
-                 // For now, let's keep the user's time limit unless it's also too high
-                 if (timeLimitValue > filteredQuestions.length) {
-                     timeLimitInput.value = questionLimit;
-                     timeRemaining = questionLimit * 60; // Adjust time if it was higher than new question limit
-                 }
-
-             }
-
-
-            shuffledQuestions = await selectQuestions(
-                filteredQuestions, // Use filtered questions
-                questionLimit,     // Use the potentially adjusted limit
-                subjectName,
-                selectedLesson // Pass selectedLesson to selectQuestions
-            ); // Await the Promise
-        } else {
-            console.error("Subject not found:", subjectName);
-            displayError("Subject not found. Please refresh the page.");
-            return;
-        }
-    } else {
-        console.warn("Subject name not yet received from parent window.");
-        displayError("Loading subject...");
-        return;
-    }
-
-    if (shuffledQuestions.length === 0) {
-        displayError("No questions could be selected for the quiz.");
-        return; // Stop quiz start if no questions
-    } else {
-        if (errorMessage) errorMessage.classList.add("hide"); // Ensure error message is hidden if questions are found
-    }
-
-    shuffledQuestions.forEach((question) => {
-        if (question) {
-            // Check if question is defined
-            question.answered = false;
-        }
-    });
-    startScreen.classList.add("hide");
-    quizScreen.classList.remove("hide");
-    showQuiz();
-
-    // Use typeText for the quiz heading
-    if (quizHeading) typeText(quizHeading, subjectName, 30);
-
-    startTimer(); // Start the timer
-    displayQuestion(); // Display the first question
+  return isValid;
 }
 
-async function selectQuestions(allQuestions, limit, subject, lesson) {
-    // Added lesson parameter
-    let selectedQuestions = [];
-    const historyKey = lesson === "সকল পাঠ" ? subject : `${subject}-${lesson}`; // Create history key
+// --- Populating UI Elements ---
 
-     // Ensure limit is not greater than the number of available questions
-     const actualLimit = Math.min(limit, allQuestions.length);
-     if (limit > allQuestions.length) {
-         console.warn(`Requested limit ${limit} exceeds available questions ${allQuestions.length}. Using ${actualLimit}.`);
-     }
+/**
+ * Populates the lesson selection dropdown based on available questions,
+ * lessons, images, and SVGs for the current subject.
+ * Hides the dropdown if no relevant filtering options exist.
+ * @param {string} subjectName The name of the current subject.
+ */
+function populateLessonDropdown(subjectName) {
+  if (!quizLessonDropdown || !lessonDropdownMenu || !data || !data.sections) {
+    console.warn("Cannot populate lesson dropdown: Elements or data not ready.");
+    if (lessonDropdownMenu) lessonDropdownMenu.classList.add("hide");
+    if (quizLessonDropdown) quizLessonDropdown.disabled = true;
+    return;
+  }
 
+  const lessonDropdown = quizLessonDropdown;
+  lessonDropdown.innerHTML = ""; // Clear previous options
 
-    if (!questionHistory[subject]) {
-        // Ensure subject history object exists
-        questionHistory[subject] = {};
+  const section = data.sections.find((s) => s.section === subjectName);
+
+  // Scan questions for characteristics
+  let hasAnyImage = false;
+  let hasAnySVG = false;
+  let hasAnyLessons = false;
+  let hasAnyQuestions = false;
+  const uniqueLessons = new Set();
+
+  if (section?.questions?.length > 0) {
+    hasAnyQuestions = true;
+    section.questions.forEach((q) => {
+      if (!q) return;
+
+      // Check images
+      if (!hasAnyImage) {
+        hasAnyImage = containsImageMarker(q.question) ||
+                      q.options?.some(opt => {
+                          const key = Object.keys(opt || {})[0];
+                          return key && containsImageMarker(key);
+                      });
+      }
+      // Check SVG
+      if (!hasAnySVG) {
+        hasAnySVG = containsSVGMarker(q.question) ||
+                    q.options?.some(opt => {
+                        const key = Object.keys(opt || {})[0];
+                        return key && containsSVGMarker(key);
+                    });
+      }
+      // Check lessons
+      if (q.lesson && typeof q.lesson === "string" && q.lesson.trim()) {
+        hasAnyLessons = true;
+        uniqueLessons.add(q.lesson.trim());
+      }
+    });
+  }
+
+  // Determine Dropdown Visibility and Options
+  const shouldShowDropdown = hasAnyQuestions && (hasAnyImage || hasAnySVG || hasAnyLessons);
+
+  if (shouldShowDropdown) {
+    lessonDropdownMenu.classList.remove("hide");
+    lessonDropdown.disabled = false;
+
+    lessonDropdown.options.add(new Option("সকল পাঠ", "সকল পাঠ")); // "All Lessons"
+    if (hasAnyImage) lessonDropdown.options.add(new Option("শুধুমাত্র ছবিযুক্ত প্রশ্ন", "image_questions_only")); // "Image Questions Only"
+    if (hasAnySVG) lessonDropdown.options.add(new Option("শুধুমাত্র SVG প্রশ্ন", "svg_questions_only")); // "SVG Questions Only"
+    if (hasAnyLessons) {
+      Array.from(uniqueLessons).sort().forEach(lesson => lessonDropdown.options.add(new Option(lesson, lesson)));
     }
+    console.log(`Lesson dropdown populated for ${subjectName}. Images: ${hasAnyImage}, SVG: ${hasAnySVG}, Lessons: ${hasAnyLessons}`);
+  } else {
+    lessonDropdownMenu.classList.add("hide");
+    lessonDropdown.disabled = true;
+    selectedLesson = "সকল পাঠ"; // Default if hidden
+    console.log(`Lesson dropdown hidden for ${subjectName}. Questions: ${hasAnyQuestions}, Images: ${hasAnyImage}, SVG: ${hasAnySVG}, Lessons: ${hasAnyLessons}`);
+  }
 
-    if (!questionHistory[subject][historyKey]) {
-        // Initialize history for this lesson within the subject
-        questionHistory[subject][historyKey] = [];
-    }
+  lessonDropdown.value = "সকল পাঠ";
+  selectedLesson = "সকল পাঠ";
+}
 
-    let availableQuestions = allQuestions.filter(
-        (q) => q && q.question && !questionHistory[subject][historyKey].includes(q.question) // Add safety checks
-    );
+/**
+ * Updates the min/max attributes and values of the question/time limit inputs
+ * based on the number of questions available for the currently selected lesson/filter.
+ */
+function updateMinLimitsForLesson() {
+  if (!questionLimitInput || !timeLimitInput || !quizLessonDropdown || !questions) {
+    console.warn("Cannot update limits: Elements or questions data not ready.");
+    if (questionLimitInput) { questionLimitInput.min = 1; questionLimitInput.max = 1; questionLimitInput.value = 1; }
+    if (timeLimitInput) { timeLimitInput.min = 1; timeLimitInput.max = 1; timeLimitInput.value = 1; }
+    validateInputs();
+    return;
+  }
 
-    if (availableQuestions.length < actualLimit) {
-        // Not enough new questions, need to reuse from history
-        let historyQuestions = [...questionHistory[subject][historyKey]];
-
-        // Filter out invalid entries from history before checking length
-        const validHistoryQuestions = allQuestions.filter(q => q && q.question && historyQuestions.includes(q.question));
-
-
-        if (
-            availableQuestions.length === 0 &&
-            validHistoryQuestions.length === allQuestions.length && // Compare valid history size against all questions
-            allQuestions.length > 0 // Only reset if there are actually questions
-        ) {
-            console.log(`All questions for "${historyKey}" seen. Resetting history.`);
-            questionHistory[subject][historyKey] = [];
-            historyQuestions = []; // Start fresh with selection
-             // Re-filter available questions as history is now empty
-             availableQuestions = allQuestions.filter(q => q && q.question); // Filter valid questions
-        }
-
-
-         // Add all available new questions first
-         selectedQuestions.push(...availableQuestions);
-         availableQuestions.forEach(q => {
-             if (q && q.question && !questionHistory[subject][historyKey].includes(q.question)) {
-                  questionHistory[subject][historyKey].push(q.question);
-             }
-         });
-
-
-        // Now fill remaining spots from history (if needed)
-         const neededFromHistory = actualLimit - selectedQuestions.length;
-         if (neededFromHistory > 0 && historyQuestions.length > 0) {
-              // Shuffle history questions to pick randomly
-              historyQuestions = shuffleArray(historyQuestions);
-              const questionsToReuse = historyQuestions.slice(0, neededFromHistory);
-
-              questionsToReuse.forEach(questionText => {
-                  const question = allQuestions.find((q) => q && q.question === questionText); // Add check for q
-                  if (question && !selectedQuestions.some(sq => sq.question === question.question)) { // Avoid duplicates if logic allows
-                       selectedQuestions.push(question);
-                   }
-              });
-         }
-
-    } else {
-        // Enough new questions available
-        availableQuestions = shuffleArray(availableQuestions); // Shuffle before picking
-        while (selectedQuestions.length < actualLimit && availableQuestions.length > 0) {
-             const question = availableQuestions.pop(); // Take from the end after shuffle
-             if (question && question.question) { // Add safety check
-                 selectedQuestions.push(question);
-                 if (!questionHistory[subject][historyKey].includes(question.question)) {
-                      questionHistory[subject][historyKey].push(question.question); // Add to history
-                 }
-             }
-        }
-    }
-
-   // Fallback: If still not enough questions (e.g., empty data), fill with whatever is possible
-   // This part might be less necessary with the improved logic above but kept as safety
-   while (selectedQuestions.length < actualLimit && allQuestions.length > selectedQuestions.length) {
-      const randomIndex = Math.floor(Math.random() * allQuestions.length);
-      const question = allQuestions[randomIndex];
-       // Ensure we don't add duplicates and question is valid
-       if (question && question.question && !selectedQuestions.some(sq => sq.question === question.question)) {
-           selectedQuestions.push(question);
-       }
+  const lessonFilter = quizLessonDropdown.disabled ? "সকল পাঠ" : quizLessonDropdown.value;
+  let filterText = "selected filter";
+   if (!quizLessonDropdown.disabled && quizLessonDropdown.selectedIndex >= 0) {
+       filterText = `"${quizLessonDropdown.options[quizLessonDropdown.selectedIndex].text}"`;
+   } else if (lessonFilter === "সকল পাঠ"){
+       filterText = '"সকল পাঠ"';
    }
 
+  // Filter questions based on the selected criteria
+  let filteredQuestions = [];
+  if (Array.isArray(questions)) {
+      if (lessonFilter === "image_questions_only") {
+          filteredQuestions = questions.filter(q => q && (containsImageMarker(q.question) || q.options?.some(opt => { const key = Object.keys(opt || {})[0]; return key && containsImageMarker(key); })));
+      } else if (lessonFilter === "svg_questions_only") {
+          filteredQuestions = questions.filter(q => q && (containsSVGMarker(q.question) || q.options?.some(opt => { const key = Object.keys(opt || {})[0]; return key && containsSVGMarker(key); })));
+      } else if (lessonFilter !== "সকল পাঠ") {
+          filteredQuestions = questions.filter(q => q?.lesson === lessonFilter);
+      } else {
+          filteredQuestions = questions.filter(q => q); // Filter out null/undefined
+      }
+  } else {
+      console.error("Global 'questions' variable is not an array or not set.");
+  }
 
-    await saveQuestionHistory();
-    return shuffleArray(selectedQuestions); // Final shuffle of the selected list
+  const availableCount = filteredQuestions.length;
+  let newMinLimit = 1;
+  let newMaxLimit = Math.max(1, availableCount);
+
+  if (availableCount === 0) {
+      displayError(`No questions available for the ${filterText}.`);
+      newMinLimit = 1;
+      newMaxLimit = 1;
+  } else {
+      if (availableCount >= 30) newMinLimit = 30;
+      else if (availableCount >= 10) newMinLimit = 10;
+      else newMinLimit = 1;
+      newMinLimit = Math.min(newMinLimit, newMaxLimit); // Ensure min <= max
+      if (errorMessage && errorMessage.textContent.includes("No questions available")) {
+          hideError();
+      }
+  }
+
+  questionLimitInput.min = newMinLimit;
+  timeLimitInput.min = newMinLimit;
+  questionLimitInput.max = newMaxLimit;
+  timeLimitInput.max = newMaxLimit;
+
+  const currentQVal = parseInt(questionLimitInput.value) || newMinLimit;
+  const currentTVal = parseInt(timeLimitInput.value) || newMinLimit;
+
+  questionLimitInput.value = Math.min(Math.max(currentQVal, newMinLimit), newMaxLimit);
+  timeLimitInput.value = Math.min(Math.max(currentTVal, newMinLimit), newMaxLimit);
+
+  validateInputs(); // Re-validate after updating limits/values
 }
 
-function convertNewlinesToHtml(text) {
-    // Ensure text is a string before replacing
-    if (typeof text !== 'string') {
-        return ''; // Return empty string or handle as appropriate
+
+// --- Quiz Lifecycle Functions ---
+
+/**
+ * Starts the quiz after validating inputs and selecting questions.
+ * Transitions the UI from the start screen to the quiz screen.
+ */
+async function startQuiz() {
+  console.log("Attempting to start quiz...");
+  const requiredElements = [questionLimitInput, timeLimitInput, quizLessonDropdown, startButton, startScreen, quizScreen, quizHeading, lessonDropdownMenu, errorMessage];
+  if (requiredElements.some(el => !el)) {
+      console.error("Required elements not ready to start quiz. Aborting.");
+      displayError("Initialization error. Please refresh the page.");
+      return;
+  }
+
+  if (!validateInputs()) {
+      console.log("Start button disabled due to validation errors. Aborting startQuiz.");
+      return;
+  }
+
+  // Setup Quiz State
+  questionLimit = parseInt(questionLimitInput.value);
+  timeRemaining = parseInt(timeLimitInput.value) * 60;
+  currentQuestion = 0;
+  score = 0;
+  shuffledQuestions = [];
+  isPaused = false;
+
+  // Determine effective lesson filter
+  if (quizLessonDropdown.disabled || lessonDropdownMenu.classList.contains('hide')) {
+      selectedLesson = "সকল পাঠ";
+      console.log("Dropdown disabled/hidden, forcing selectedLesson to 'সকল পাঠ'");
+  } else {
+      selectedLesson = quizLessonDropdown.value;
+      console.log("Using dropdown value for selectedLesson:", selectedLesson);
+  }
+
+  // Load and Filter Questions
+  if (!data || !subjectName) {
+      console.error("Quiz data or subject name not available. Cannot start quiz.");
+      displayError("Quiz data failed to load or subject missing. Please refresh.");
+      return;
+  }
+  const section = data.sections.find((s) => s.section === subjectName);
+  if (!section?.questions) {
+      console.error("Subject section or questions not found for:", subjectName);
+      displayError("Subject data not found. Please select a subject again.");
+      return;
+  }
+
+  let baseQuestions = section.questions.filter(q => q); // Filter out invalid entries
+  let filteredQuestions = [];
+  let currentFilterText = "selected filter";
+  if (!quizLessonDropdown.disabled && quizLessonDropdown.selectedIndex >= 0) {
+       currentFilterText = `"${quizLessonDropdown.options[quizLessonDropdown.selectedIndex].text}"`;
+   } else if (selectedLesson === "সকল পাঠ"){
+       currentFilterText = '"সকল পাঠ"';
+   }
+
+  // Apply filter
+  if (selectedLesson === "image_questions_only") {
+    filteredQuestions = baseQuestions.filter(q => containsImageMarker(q.question) || q.options?.some(opt => { const key = Object.keys(opt || {})[0]; return key && containsImageMarker(key); }));
+  } else if (selectedLesson === "svg_questions_only") {
+    filteredQuestions = baseQuestions.filter(q => containsSVGMarker(q.question) || q.options?.some(opt => { const key = Object.keys(opt || {})[0]; return key && containsSVGMarker(key); }));
+  } else if (selectedLesson !== "সকল পাঠ") {
+    filteredQuestions = baseQuestions.filter(q => q.lesson === selectedLesson);
+  } else {
+    filteredQuestions = baseQuestions;
+  }
+
+  if (filteredQuestions.length === 0) {
+      displayError(`No questions available for the ${currentFilterText}. Please change the filter or subject.`);
+      if(startButton) startButton.disabled = true;
+      return;
+  }
+
+  // Adjust question limit if needed
+  let actualLimit = questionLimit; // Use a local variable for the adjusted limit
+  if (questionLimit > filteredQuestions.length) {
+      console.warn(`Requested ${questionLimit} questions, but only ${filteredQuestions.length} available for ${currentFilterText}. Adjusting limit.`);
+      actualLimit = filteredQuestions.length; // Adjust the limit for this session
+      questionLimitInput.value = actualLimit; // Update input display
+
+      if (parseInt(timeLimitInput.value) > actualLimit) {
+          timeLimitInput.value = actualLimit;
+          timeRemaining = actualLimit * 60;
+          console.warn(`Time limit also adjusted to ${actualLimit} minutes.`);
+      }
+      validateInputs(); // Re-validate after adjusting limits
+  }
+
+  // Select Questions (using history and the potentially adjusted limit)
+  try {
+      shuffledQuestions = await selectQuestions(filteredQuestions, actualLimit, subjectName, selectedLesson);
+      console.log(`DEBUG: startQuiz - Assigned shuffledQuestions. Length: ${shuffledQuestions.length}, Expected Limit (after adjustment): ${actualLimit}`);
+  } catch (error) {
+      console.error("Error during question selection:", error);
+      displayError("An error occurred while selecting questions.");
+      return;
+  }
+
+  if (shuffledQuestions.length === 0) {
+      displayError("Could not select any questions for the quiz. Please try again or change filters.");
+      return;
+  }
+
+  // Initialize question state
+  shuffledQuestions.forEach(q => { if (q) q.answered = false; });
+
+  // Transition to Quiz Screen
+  startScreen.classList.add("hide");
+  quizScreen.classList.remove("hide");
+  endScreen.classList.add("hide");
+  hideError();
+
+  if (quizHeading) quizHeading.textContent = subjectName;
+
+  // Start Quiz
+  displayQuestion();
+  startTimer();
+  showQuiz();
+  console.log(`Quiz started with ${shuffledQuestions.length} questions. Filter: ${selectedLesson}. Time: ${timeRemaining/60} mins.`);
+}
+
+
+/**
+ * Selects questions for the quiz based on the filter, limit, and user's history.
+ * Prioritizes unseen questions and handles history reset when all questions for a filter are seen.
+ * Saves the updated history to IndexedDB.
+ * @param {Array<object>} allFilteredQuestions Questions already filtered by lesson/type.
+ * @param {number} limit The maximum number of questions to select.
+ * @param {string} subject The current subject name.
+ * @param {string} lessonOrFilter The selected filter ('সকল পাঠ', 'image_questions_only', 'svg_questions_only', or specific lesson name).
+ * @returns {Promise<Array<object>>} A promise resolving with the array of selected and shuffled questions.
+ */
+async function selectQuestions(allFilteredQuestions, limit, subject, lessonOrFilter) {
+    // Generate a unique history key for this subject/filter combination
+    let historyKey;
+    if (lessonOrFilter === "image_questions_only") historyKey = `${subject}-images_only`;
+    else if (lessonOrFilter === "svg_questions_only") historyKey = `${subject}-svg_only`;
+    else if (lessonOrFilter === "সকল পাঠ") historyKey = `${subject}-all`;
+    else historyKey = `${subject}-${lessonOrFilter}`; // Specific lesson name
+
+    // Determine the actual number of questions to select (cannot exceed available)
+    const actualLimit = Math.min(limit, allFilteredQuestions.length);
+    if (limit > allFilteredQuestions.length) {
+        console.warn(`Requested limit ${limit} exceeds available filtered questions ${allFilteredQuestions.length}. Using ${actualLimit}.`);
     }
-    return text.replace(/\n/g, "<br>");
+
+    // Ensure history structure exists for this subject and filter
+    if (!questionHistory[subject]) questionHistory[subject] = {};
+    if (!questionHistory[subject][historyKey]) questionHistory[subject][historyKey] = [];
+
+    const historyList = questionHistory[subject][historyKey]; // Array of seen question *texts*
+    // Find questions from the filtered list that are *not* in the history
+    let availableQuestions = allFilteredQuestions.filter(q => q?.question && !historyList.includes(q.question));
+    let selectedQuestions = [];
+    let historyWasReset = false; // Flag to track if history was reset during this selection
+
+    // --- Selection Logic ---
+    // Case 1: Not enough *new* questions available
+    if (availableQuestions.length < actualLimit) {
+        console.log(`Not enough new questions (${availableQuestions.length}) for filter '${historyKey}', need ${actualLimit}. Checking history.`);
+
+        // Check if ALL questions for this filter have been seen previously
+        if (
+            availableQuestions.length === 0 && // No new questions left
+            historyList.length >= allFilteredQuestions.length && // History contains at least as many as available
+            allFilteredQuestions.length > 0 // And there are actually questions for this filter
+        ) {
+            console.log(`All ${allFilteredQuestions.length} questions for filter "${historyKey}" seen. Resetting history for this filter.`);
+            questionHistory[subject][historyKey] = []; // Reset history list in memory
+            historyList.length = 0; // Clear the local copy too (important!)
+            availableQuestions = [...allFilteredQuestions]; // All questions are now considered "available" again
+            historyWasReset = true; // Set the flag
+        }
+
+        // --- Sub-case: History was NOT reset ---
+        if (!historyWasReset) {
+            // Add all available *new* questions first
+            selectedQuestions.push(...availableQuestions);
+            // Add these new questions to the history list
+            availableQuestions.forEach(q => {
+                if (q?.question && !historyList.includes(q.question)) { // Double check not already added
+                    historyList.push(q.question);
+                }
+            });
+
+            // Calculate how many more questions are needed from the history
+            const neededFromHistory = actualLimit - selectedQuestions.length;
+            if (neededFromHistory > 0) {
+                // Get questions that *are* in the history and *are* part of the current filtered set
+                let historyCandidates = allFilteredQuestions.filter(q => q?.question && historyList.includes(q.question));
+                historyCandidates = shuffleArray(historyCandidates); // Shuffle potential candidates from history
+
+                // Add needed questions from shuffled history, avoiding duplicates already selected
+                let addedFromHistory = 0;
+                for (const histQ of historyCandidates) {
+                    if (addedFromHistory >= neededFromHistory) break;
+                    // Ensure we don't add a question already selected (e.g., if availableQuestions was empty)
+                    if (!selectedQuestions.some(sq => sq.question === histQ.question)) {
+                        selectedQuestions.push(histQ);
+                        // NOTE: No need to add these back to historyList, they are already there.
+                        addedFromHistory++;
+                    }
+                }
+                console.log(`Added ${addedFromHistory} questions from history for filter '${historyKey}'.`);
+            }
+        // --- Sub-case: History WAS reset ---
+        } else {
+            // availableQuestions now holds ALL questions for the filter
+            availableQuestions = shuffleArray(availableQuestions); // Shuffle them
+            selectedQuestions = availableQuestions.slice(0, actualLimit); // Take only the required number (respecting the limit!)
+            // Add these selected questions to the now-empty history list
+            selectedQuestions.forEach(q => {
+                if (q?.question) { // No need to check historyList inclusion as it's empty
+                    historyList.push(q.question);
+                }
+            });
+            console.log(`Selected ${selectedQuestions.length} questions after history reset for filter '${historyKey}'.`);
+        }
+
+    // Case 2: Enough *new* questions are available
+    } else {
+        availableQuestions = shuffleArray(availableQuestions);
+        selectedQuestions = availableQuestions.slice(0, actualLimit); // Take the required number of new questions
+        // Add these selected new questions to history
+        selectedQuestions.forEach(q => {
+            if (q?.question && !historyList.includes(q.question)) {
+                historyList.push(q.question);
+            }
+        });
+        console.log(`Selected ${selectedQuestions.length} new questions for filter '${historyKey}'.`);
+    }
+
+    // --- Safety check: Fill remaining slots if selection logic somehow failed (unlikely with current logic) ---
+    while (selectedQuestions.length < actualLimit && allFilteredQuestions.length > selectedQuestions.length) {
+        const remainingCandidates = allFilteredQuestions.filter(q => q && !selectedQuestions.some(sq => sq.question === q.question));
+        if (remainingCandidates.length === 0) break; // Avoid infinite loop if no more unique questions exist
+        const randomIndex = Math.floor(Math.random() * remainingCandidates.length);
+        selectedQuestions.push(remainingCandidates[randomIndex]);
+        // Also add to history if added via safety check
+        if (remainingCandidates[randomIndex]?.question && !historyList.includes(remainingCandidates[randomIndex].question)) {
+             historyList.push(remainingCandidates[randomIndex].question);
+        }
+        console.warn("Safety check: Had to add extra question(s) to meet limit - review selection logic.");
+    }
+
+    // --- Save the updated history (with newly added question texts) to IndexedDB ---
+    // This happens asynchronously and doesn't block returning the questions.
+    saveQuestionHistory();
+
+    // --- Final shuffle of the selected questions list before returning ---
+    return shuffleArray(selectedQuestions);
 }
 
+
+/**
+ * Processes text to replace image markers `(image/...)` or HTML `<img>` tags
+ * with standardized HTML `<img>` elements.
+ * @param {string} text The input text.
+ * @returns {string} The text with image markers/tags replaced by HTML elements.
+ */
 function processTextWithImages(text) {
-    // Ensure text is a string before processing
-     if (typeof text !== 'string') {
-         return ''; // Return empty string or handle appropriately
-     }
-    return text.replace(
-        /(\(image\/[^\)]+\))|(<img.*?src=["'](image\/[^"']+)["'].*?>)/g,
-        (match, inlineImage, imgTag, imgSrc) => {
-            let filename;
-            if (inlineImage) {
-                filename = inlineImage.slice(1, -1); // Extract filename from (image/filename)
-                 // Check if filename already includes 'image/' prefix, avoid doubling
-                 if (!filename.startsWith('image/')) {
-                     filename = 'image/' + filename;
-                 }
-            } else if (imgSrc) {
-                filename = imgSrc; // Filename from <img src="image/filename" ...>
-            } else {
-                return match; // Should not happen with this regex, but safety first
-            }
+  if (typeof text !== 'string') return "";
 
-            // Basic validation: Check if filename seems reasonable (e.g., not empty)
-             if (!filename || typeof filename !== 'string' || filename.trim() === 'image/') {
-                 console.warn("Invalid image source detected:", match);
-                 return match; // Return original match if filename is invalid
-             }
+  const regex = /(\(image\/([^\)]+)\))|(<img\s+[^>]*src\s*=\s*["']([^"']+)["'][^>]*>)/gi;
 
+  return text.replace(regex, (match, _inlineMarker, inlineFilename, _imgTag, imgSrcValue) => {
+    let finalSrc = "";
 
-            // Always return an img tag
-            return `<div><img src="${filename}" style="width: 100%; height: 100%;" alt="Image" ondragstart="return false;"></div>`;
-        }
-    );
-}
-
-
-function displayQuestion() {
-    // Add checks for required elements
-    if (!questionElement || !answerWrapperElement || !previousButton || !nextButton || !pauseButton) {
-        console.error("Required elements missing for displayQuestion");
-        stopQuiz();
-        return;
-    }
-    if (
-        !shuffledQuestions ||
-        currentQuestion < 0 ||
-        currentQuestion >= shuffledQuestions.length ||
-        !shuffledQuestions[currentQuestion] // Add check for undefined question object
-    ) {
-        displayError("Invalid question index or question data missing.");
-        // Optionally stop the quiz or navigate to end screen
-        stopQuiz(); // Example: Stop the quiz on critical error
-        return;
-    }
-
-
-    const questionData = shuffledQuestions[currentQuestion];
-    pauseButton.classList.add('hide'); // Ensure pause button is hidden on new question
-    // isPaused = false; // Reset pause state on new question - Handled in next/prev now
-    clearPreviousContent();
-
-    // Process the question text with images and LaTeX
-    let content = processTextWithImages(questionData.question);
-
-    // Highlight text inside '....'
-    content = content.replace(/'([^']+)'/g, function (_match, p1) {
-        return `<span class="highlight">${p1}</span>`;
-    });
-
-    // Replace <... class="mathy"> with <script type="math/asciimath">, preserving inner content
-    content = content.replace(
-        /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g,
-        function (_match, p1) {
-            // Strip out any HTML tags inside the mathy element content
-            const cleanedContent = p1.replace(/<[^>]*>/g, ""); // Remove all HTML tags
-            return `<script type="math/asciimath">${cleanedContent}</script>`;
-        }
-    );
-
-    const questionHTML = `
-      <h5>${convertNewlinesToHtml(content)}</h5>
-    `;
-    questionElement.innerHTML = questionHTML;
-
-    // Try rendering MathJax
-    try {
-        if (typeof MathJax !== 'undefined' && MathJax.Hub) {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, questionElement]);
-        } else {
-             console.warn("MathJax not available or not configured.");
-        }
-    } catch (error) {
-         console.error("Error rendering MathJax for question:", error);
-    }
-
-
-    // Display the answers
-    displayAnswers(questionData);
-
-    // Fade-in animation for answers
-    answerWrapperElement.style.opacity = "1";
-    answerWrapperElement.style.animation = "fadeInUp 1s";
-
-    // Disable the previous button if this is the first question
-    previousButton.disabled = currentQuestion === 0;
-
-    // Disable both next and previous buttons if questionLimit is 1 (or if only 1 question selected)
-    if (shuffledQuestions.length <= 1) {
-        nextButton.disabled = true;
-        previousButton.disabled = true;
+    if (inlineFilename) {
+        finalSrc = inlineFilename.toLowerCase().startsWith("image/") ? inlineFilename : `image/${inlineFilename}`;
+    } else if (imgSrcValue) {
+      finalSrc = imgSrcValue;
     } else {
-         // Ensure next button is enabled unless it's the last question AND answered
-         nextButton.disabled = questionData.answered && (currentQuestion === shuffledQuestions.length - 1);
-     }
-
-
-    // Update the question counter
-    updateQuestionCounter();
-
-    // Add CSS for highlighting dynamically (if not already added)
-    if (!document.getElementById('highlight-styles')) {
-         addHighlightCSS();
+      return match;
     }
+
+    if (!finalSrc || typeof finalSrc !== 'string' || finalSrc.trim() === "") {
+      console.warn("Invalid image source detected or extracted:", match);
+      return match;
+    }
+
+    const altText = inlineFilename || imgSrcValue.split('/').pop() || "Image";
+    return `<div><img src="${finalSrc}" alt="${altText}" style="max-width: 100%; height: auto; display: block; margin: 5px auto;" ondragstart="return false;"></div>`;
+  });
 }
 
-// Function to add CSS dynamically
-function addHighlightCSS() {
-    // Check if style already exists
-    if (document.getElementById('highlight-styles')) return;
-
-    const style = document.createElement("style");
-    style.id = 'highlight-styles'; // Add an ID to prevent duplication
-    style.type = "text/css";
-    style.innerHTML = `
-  .highlight {
-    display: inline-block; /* Ensures border-radius applies to wrapped lines */
-    background: linear-gradient(90deg, #84fab0, #8fd3f4);
-    font-weight: bold;
-    border-radius: 8px;
-    padding: 3.5px 6px;
-    margin: 2.5px 4px; /* Adds 4px of space on all sides (top, bottom, left, and right) */
-    color: #ffffff;
-  }
-
-  .explanation-container {
-    margin-top: 20px; /* Space above the entire explanation block */
-    animation: fadeInUp 1s;
-  }
-
-  .explanation-heading {
-    font-size: 18px; /* Larger font size for the heading */
-    font-weight: bold; /* Make the heading bold */
-    color: #0056b3; /* Example heading color, adjust as needed */
-    margin-bottom: 10px; /* Space below the heading */
-    display: flex;        /* Enable flexbox for alignment */
-    align-items: center; /* Vertically align items in the heading */
-    text-align: left;    /* Align heading text to the left */
-  }
-
-  .explanation-heading-text {
-    margin-right: 5px; /* Add some space between text and arrow */
-  }
-
-  .explanation-arrow-image {
-    width: 24px;         /* Adjust size as needed */
-    height: auto;
-    transform: rotate(350deg); /* Rotate the arrow */
-    display: inline-block; /* Treat as inline element */
-    vertical-align: middle; /* Align arrow vertically with text */
-    margin-left: 1px;
-    margin-top: 15.5px;
-  }
-
-
-  .question-explanation {
-    padding: 15px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    text-align: left;
-    color: #333;
-    font-size: 16px;
-    line-height: 1.6; /* Improved line height for readability */
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.05); /* Subtle shadow for depth */
-    word-wrap: break-word; /* Ensure long words break and wrap */
-    overflow-y: auto; /* Add vertical scroll when content overflows */
-    max-height: 300px; /* Set a maximum height for the explanation area */
-  }
-
-
-    `;
-    document.head.appendChild(style);
-}
-
-function showError(_message) {
-     displayError(_message); // Use the main displayError function
-}
-
+/**
+ * Clears the question and answer areas, resets answer wrapper opacity,
+ * and clears any pending timeouts/intervals related to question display.
+ */
 function clearPreviousContent() {
-    if (answerWrapperElement) answerWrapperElement.innerHTML = "";
-    if (questionElement) questionElement.innerHTML = "";
-    if (answerWrapperElement) answerWrapperElement.style.opacity = "0";
-    // Clear any existing auto-next timeout
-    clearTimeout(autoNextTimeout);
-    // Clear any typing interval if needed (though usually associated with typeText)
-    clearInterval(typingInterval);
+  if (answerWrapperElement) answerWrapperElement.innerHTML = "";
+  if (questionElement) questionElement.innerHTML = "";
+  if (answerWrapperElement) answerWrapperElement.style.opacity = "0";
+  clearTimeout(autoNextTimeout);
+  clearInterval(typingInterval);
 }
 
+/**
+ * Updates the "Question X of Y" counter display.
+ */
 function updateQuestionCounter() {
-    const currentEl = document.querySelector(".current");
-    const totalEl = document.querySelector(".total");
-    if (currentEl) currentEl.innerHTML = currentQuestion + 1;
-    if (totalEl) totalEl.innerHTML = shuffledQuestions.length; // Use actual number of selected questions
+  const currentEl = numberProgressContainer?.querySelector(".current");
+  const totalEl = numberProgressContainer?.querySelector(".total");
+  if (currentEl) currentEl.textContent = currentQuestion + 1;
+  if (totalEl) totalEl.textContent = shuffledQuestions.length; // Use actual length of selected questions
 }
 
-// --- START OF UPDATED HELPER FUNCTION ---
+/**
+ * Creates and appends the explanation block (if available) below the answers.
+ * Processes the explanation text for images, newlines, and MathJax.
+ * @param {object} questionData The data for the current question.
+ * @param {HTMLElement} targetElement The element to append the explanation block to (usually answerWrapperElement).
+ */
 function addExplanationBlock(questionData, targetElement) {
-    // Ensure questionData, explanation, and targetElement are valid
-    if (!questionData || !questionData.explanation || typeof questionData.explanation !== 'string' || questionData.explanation.trim() === "" || !targetElement) {
-        // Added check for explanation being a string
-        return; // Do nothing if no explanation or target is invalid
+  if (!questionData?.explanation?.trim() || !targetElement) {
+    return;
+  }
+  if (targetElement.querySelector(".explanation-container")) return; // Prevent duplicates
+
+  const explanationContainer = document.createElement("div");
+  explanationContainer.className = "explanation-container";
+
+  const explanationHeading = document.createElement("h4");
+  explanationHeading.className = "explanation-heading";
+  explanationHeading.innerHTML = `
+      <span class="explanation-heading-text">Explanation</span>
+      <img src="12arrow.png" alt="->" class="explanation-arrow-image">
+    `;
+
+  const explanationDiv = document.createElement("div");
+  explanationDiv.className = "question-explanation";
+
+  // Process explanation content
+  let explanationContent = processTextWithImages(questionData.explanation);
+  explanationContent = convertNewlinesToHtml(explanationContent);
+  explanationContent = explanationContent.replace(
+    /<span class="mathy">(.*?)<\/span>/g,
+    (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
+  );
+  explanationContent = explanationContent.replace(
+    /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g,
+    (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
+  );
+
+  explanationDiv.innerHTML = explanationContent;
+
+  explanationContainer.appendChild(explanationHeading);
+  explanationContainer.appendChild(explanationDiv);
+  targetElement.appendChild(explanationContainer);
+
+  // Queue MathJax rendering
+  try {
+    if (window.MathJax?.Hub) {
+      MathJax.Hub.Queue(["Typeset", MathJax.Hub, explanationDiv]);
+    } else if (window.MathJax?.typesetPromise) {
+         window.MathJax.typesetPromise([explanationDiv]);
+    }
+  } catch (error) {
+    console.error("Error rendering MathJax for explanation:", error);
+  }
+}
+
+/**
+ * Displays the current question text and prepares the answer options.
+ * Handles text processing for images, highlights, newlines, and MathJax.
+ * Updates UI elements like the question counter and navigation buttons.
+ */
+function displayQuestion() {
+  if (!questionElement || !answerWrapperElement || !previousButton || !nextButton || !pauseButton || !numberProgressContainer) {
+    console.error("Required UI elements missing for displayQuestion. Stopping quiz.");
+    displayError("UI Error. Please refresh.");
+    stopQuiz();
+    return;
+  }
+  if (currentQuestion < 0 || currentQuestion >= shuffledQuestions.length || !shuffledQuestions[currentQuestion]) {
+    console.error("Invalid current question index or data:", currentQuestion, shuffledQuestions[currentQuestion]);
+    displayError("Error loading question data.");
+    stopQuiz();
+    return;
+  }
+
+  const questionData = shuffledQuestions[currentQuestion];
+  clearPreviousContent();
+  pauseButton.classList.add("hide");
+
+  // Prepare and Display Question Text
+  let questionContent = processTextWithImages(questionData.question);
+  questionContent = convertNewlinesToHtml(questionContent);
+  questionContent = questionContent.replace(/'([^']+)'/g, `<span class="highlight">$1</span>`);
+  questionContent = questionContent.replace(
+    /<span class="mathy">(.*?)<\/span>/g,
+    (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
+  );
+  questionContent = questionContent.replace(
+    /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g,
+    (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
+  );
+
+  questionElement.innerHTML = `<h5>${questionContent}</h5>`;
+
+  // Queue MathJax rendering for the question
+  try {
+     if (window.MathJax?.Hub) {
+         MathJax.Hub.Queue(["Typeset", MathJax.Hub, questionElement]);
+     } else if (window.MathJax?.typesetPromise) {
+         window.MathJax.typesetPromise([questionElement]);
+     }
+  } catch (error) {
+    console.error("Error rendering MathJax for question:", error);
+  }
+
+  // Display answers
+  displayAnswers(questionData);
+
+  // Trigger answer fade-in animation
+  answerWrapperElement.style.opacity = "1";
+
+  // Update UI State
+  updateQuestionCounter();
+  previousButton.disabled = (currentQuestion === 0);
+  nextButton.disabled = (questionData.answered && currentQuestion === shuffledQuestions.length - 1);
+
+  addHighlightCSS(); // Ensure dynamic CSS is present
+}
+
+
+/**
+ * Renders the answer options for the current question.
+ * Handles displaying answered states (correct/wrong/disabled) or adding click listeners.
+ * Processes option text for images, newlines, and MathJax.
+ * @param {object} questionData The data for the current question.
+ */
+function displayAnswers(questionData) {
+  if (!answerWrapperElement) return;
+  answerWrapperElement.innerHTML = "";
+
+  if (!questionData?.options || !Array.isArray(questionData.options)) {
+    console.error("Invalid or missing options for question:", questionData);
+    displayError("Error displaying answer options.");
+    return;
+  }
+
+  questionData.options.forEach((option) => {
+    if (typeof option !== 'object' || option === null || Object.keys(option).length !== 1) {
+      console.warn("Skipping invalid option format:", option);
+      return;
     }
 
-    // Prevent adding multiple explanation blocks if somehow called twice
-    if (targetElement.querySelector('.explanation-container')) {
-        return;
+    const optionText = Object.keys(option)[0];
+    const isCorrect = option[optionText] === true;
+
+    const answerButton = document.createElement("div");
+    answerButton.classList.add("answer");
+    if (isCorrect) {
+      answerButton.classList.add("c"); // Hidden class to identify correct answer
     }
 
-    // Container for the whole explanation block
-    const explanationContainer = document.createElement('div');
-    explanationContainer.className = 'explanation-container';
-
-    // Heading for "Explanation"
-    const explanationHeading = document.createElement('h4');
-    explanationHeading.className = 'explanation-heading';
-
-    // Text for "Explanation"
-    const headingTextSpan = document.createElement('span');
-    headingTextSpan.className = 'explanation-heading-text';
-    headingTextSpan.textContent = 'Explanation';
-
-    // Arrow Image
-    const arrowImage = document.createElement('img');
-    arrowImage.src = '12arrow.png'; // Path to your arrow image
-    arrowImage.alt = 'Arrow';
-    arrowImage.className = 'explanation-arrow-image';
-
-    explanationHeading.appendChild(headingTextSpan); // Add text to heading
-    explanationHeading.appendChild(arrowImage);       // Add arrow image to heading
-
-    // Div for the explanation content itself
-    const explanationDiv = document.createElement('div');
-    explanationDiv.className = 'question-explanation'; // Renamed class to question-explanation
-
-    // --- MODIFIED PART ---
-    // 1. Process explanation text for images first
-    let explanationContent = processTextWithImages(questionData.explanation);
-
-    // 2. Then, process the result for MathJax ('mathy' class)
-    explanationContent = explanationContent.replace(
-        /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, // Regex to find mathy elements
-        function (_match, p1) { // p1 is the captured content inside the mathy element
-            // Strip out any potential HTML tags *inside* the math content itself
-            const cleanedContent = p1.replace(/<[^>]*>/g, ""); // Remove all HTML tags
-            // Return the MathJax script tag
-            return `<script type="math/asciimath">${cleanedContent}</script>`;
-        }
+    // Prepare and Display Option Text
+    let optionContent = processTextWithImages(optionText);
+    optionContent = convertNewlinesToHtml(optionContent);
+    optionContent = optionContent.replace(
+        /<span class="mathy">(.*?)<\/span>/g,
+        (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
+      );
+    optionContent = optionContent.replace(
+      /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g,
+      (_match, p1) => `<span><script type="math/asciimath">${stripHTML(p1)}</script></span>`
     );
 
-    // 3. Assign the fully processed content to innerHTML
-    explanationDiv.innerHTML = explanationContent;
-    // --- END OF MODIFIED PART ---
+    answerButton.innerHTML = optionContent;
 
-    explanationContainer.appendChild(explanationHeading); // Add heading to container
-    explanationContainer.appendChild(explanationDiv);     // Add content to container
-    targetElement.appendChild(explanationContainer); // Add container to the target element (e.g., answerWrapperElement)
-
-    // Try rendering MathJax in explanation (this will now pick up the <script> tags)
-    try {
-        if (typeof MathJax !== 'undefined' && MathJax.Hub) {
-             MathJax.Hub.Queue(["Typeset", MathJax.Hub, explanationDiv]); // Render MathJax in explanation
-        }
-    } catch (error) {
-        console.error("Error rendering MathJax for explanation:", error);
-    }
-}
-// --- END OF UPDATED HELPER FUNCTION ---
-
-function displayAnswers(questionData) {
-    if (!answerWrapperElement) return; // Safety check
-    answerWrapperElement.innerHTML = ''; // Clear previous answers
-
-    if (!questionData || !questionData.options || !Array.isArray(questionData.options)) {
-         displayError("Invalid or missing options for the current question.");
-         return;
-     }
-
-    questionData.options.forEach((option) => {
-        const answerButton = document.createElement("div");
-        answerButton.classList.add("answer");
-
-        // Get the option text and its correctness (key = option text, value = is correct)
-        // Add checks for valid option format
-         if (typeof option !== 'object' || option === null || Object.keys(option).length === 0) {
-             console.warn("Skipping invalid option format:", option);
-             return; // Skip this iteration if option format is wrong
-         }
-        const optionText = Object.keys(option)[0];
-        const isCorrect = option[optionText];
-
-        // Add the "c" class to the correct answer
-        if (isCorrect) {
-            answerButton.classList.add("c"); // Add the "c" class to mark it as correct
-        }
-
-        // Process the option text with images if needed
-        let content = processTextWithImages(optionText);
-
-        // Handle MathJax content replacement
-        content = content.replace(
-             /<[^>]*class="mathy"[^>]*>(.*?)<\/[^>]*>/g, // Corrected regex
-            function (match, p1) {
-                const cleanedContent = p1.replace(/<[^>]*>/g, ""); // Remove all HTML tags from capture group
-                return `<script type="math/asciimath">${cleanedContent}</script>`;
-            }
-        );
-
-
-        // Render the content inside the button
-        displayTextAndImage(answerButton, content);
-
-        if (questionData.answered) {
-            // For answered questions, just display without event listeners
-            if (isCorrect) {
-                answerButton.classList.add("correct");
-            } else if (optionText === questionData.selectedAnswer) {
-                // Check if this was the selected wrong answer
-                answerButton.classList.add("wrong");
-            }
-            answerButton.classList.add("disabled");
-        } else {
-            // For unanswered questions, add click listener
-            answerButton.addEventListener("click", () =>
-                selectAnswer(answerButton, option)
-            );
-        }
-        answerWrapperElement.appendChild(answerButton);
-
-    });
-
-    // --- ADDED PART ---
-    // After displaying all answer buttons, check if the question was answered
-    // and if it has an explanation. If so, display the explanation block.
+    // Handle Answer State
     if (questionData.answered) {
-        addExplanationBlock(questionData, answerWrapperElement);
-        // NOTE: We do NOT show the pause button or set the auto-next timeout here.
-        // That only happens when the answer is initially selected in `selectAnswer`.
-    }
-    // --- END OF ADDED PART ---
-
-     // Trigger MathJax to render any math content that was inserted dynamically
-     try {
-         if (typeof MathJax !== 'undefined' && MathJax.Hub) {
-             MathJax.Hub.Queue(["Typeset", MathJax.Hub, answerWrapperElement]);
-         }
-     } catch (error) {
-         console.error("Error rendering MathJax for answers:", error);
-     }
-}
-
-
-function displayTextAndImage(element, content) {
-    // Ensure element is a valid DOM element
-     if (!(element instanceof Element)) {
-         console.error("Invalid element passed to displayTextAndImage");
-         return;
-     }
-    element.innerHTML = ''; // Clear previous content first
-
-    if (typeof content === "string") {
-        // Use processTextWithImages which already handles creating img tags correctly
-        element.innerHTML = processTextWithImages(content);
-
-         // If the content WAS NOT processed into an image (i.e., it's text)
-         // and contains newlines, convert them to <br>
-         if (!element.querySelector('img')) {
-             element.innerHTML = convertNewlinesToHtml(element.innerHTML);
-         }
-
-    } else if (typeof content === "object" && content !== null) {
-        // Handling object structure { text: "...", image: "..." } - less common now?
-        if (content.text) {
-            const textDiv = document.createElement('div');
-            textDiv.innerHTML = convertNewlinesToHtml(processTextWithImages(content.text));
-            element.appendChild(textDiv);
-        }
-        if (content.image) {
-             const imgContainer = document.createElement('div');
-             imgContainer.innerHTML = processTextWithImages(`(image/${content.image})`); // Use standard processing
-            element.appendChild(imgContainer);
-        }
+      answerButton.classList.add("disabled");
+      if (isCorrect) {
+        answerButton.classList.add("correct");
+      } else if (optionText === questionData.selectedAnswer) {
+        answerButton.classList.add("wrong");
+      }
     } else {
-        // Handle cases where content might be number or other type - display as text
-         const textDiv = document.createElement('div');
-         textDiv.textContent = String(content); // Convert to string
-         element.appendChild(textDiv);
-     }
-}
-
-
-// Helper function to check if an answer is correct
-function isCorrectAnswer(option) {
-    // Add validation
-     if (typeof option !== 'object' || option === null || Object.keys(option).length === 0) {
-         return false;
-     }
-    return Object.values(option)[0] === true; // Assuming the option value is a boolean indicating correctness
-}
-
-function selectAnswer(answerButton, selectedOption) {
-    if (!answerWrapperElement || !nextButton || !pauseButton) return; // Safety check
-
-    if (!shuffledQuestions[currentQuestion] || shuffledQuestions[currentQuestion].answered) {
-        return; // Prevent selecting an answer if the question is already answered or invalid
+      answerButton.addEventListener("click", () => selectAnswer(answerButton, option, questionData));
     }
 
-    // Clear any auto-next timeout triggered by a previous answer selection (if any)
+    answerWrapperElement.appendChild(answerButton);
+  });
+
+  // If question was already answered (navigating back), show explanation
+  if (questionData.answered) {
+    addExplanationBlock(questionData, answerWrapperElement);
+  }
+
+  // Queue MathJax rendering for answers
+  try {
+      if (window.MathJax?.Hub) {
+          MathJax.Hub.Queue(["Typeset", MathJax.Hub, answerWrapperElement]);
+      } else if (window.MathJax?.typesetPromise) {
+         window.MathJax.typesetPromise([answerWrapperElement]);
+     }
+  } catch (error) {
+    console.error("Error rendering MathJax for answers:", error);
+  }
+}
+
+/**
+ * Handles the user clicking an answer option.
+ * Marks the question as answered, updates score, styles buttons,
+ * shows explanation (if any), and sets up auto-next or pause.
+ * @param {HTMLElement} answerButton The clicked answer button element.
+ * @param {object} selectedOption The option object corresponding to the clicked button.
+ * @param {object} questionData The data for the current question.
+ */
+function selectAnswer(answerButton, selectedOption, questionData) {
+    if (!questionData || questionData.answered || !answerWrapperElement || !nextButton || !pauseButton) {
+        return; // Prevent re-answering or errors
+    }
+
     clearTimeout(autoNextTimeout);
 
-    let selectedAnswerElement = answerButton; // Rename variable for clarity
-    selectedAnswerElement.classList.add("selected");
+    const optionText = Object.keys(selectedOption)[0];
+    const isCorrect = selectedOption[optionText] === true;
 
-    const isCorrect = isCorrectAnswer(selectedOption); // Check if the selected answer is correct
+    // Mark question state
+    questionData.answered = true;
+    questionData.selectedAnswer = optionText;
+    questionData.isCorrect = isCorrect;
 
+    // Disable all answer buttons
     const allAnswers = answerWrapperElement.querySelectorAll(".answer");
+    allAnswers.forEach(btn => btn.classList.add("disabled"));
 
-    // Disable further clicks on all answers
-    allAnswers.forEach((answer) => {
-        answer.classList.add("disabled");
-        // Remove event listener safely - requires storing the handler if complex
-        // For this simple case, cloning and replacing might be safer if listeners were added dynamically complexly
-        // But since we add simply, just disabling visually and logically should suffice
-    });
-
-    // If the selected answer is wrong, find and highlight the correct answer immediately
-    if (!isCorrect) {
+    // Style selected and correct answers
+    answerButton.classList.add("selected");
+    if (isCorrect) {
+        answerButton.classList.add("correct");
+        score++;
+        console.log(`Question ${currentQuestion + 1} Correct. Score: ${score}`);
+    } else {
+        answerButton.classList.add("wrong");
         const correctAnswerElement = answerWrapperElement.querySelector(".answer.c");
         if (correctAnswerElement) {
-            correctAnswerElement.classList.add("correct"); // Highlight the correct answer
+            correctAnswerElement.classList.add("correct");
         }
-        selectedAnswerElement.classList.add("wrong");
-    } else {
-        selectedAnswerElement.classList.add("correct");
-        score++; // Increment score for correct answer
+        console.log(`Question ${currentQuestion + 1} Incorrect.`);
     }
 
-    // Mark the question as answered and store the selected answer text and correctness
-    shuffledQuestions[currentQuestion].answered = true;
-    shuffledQuestions[currentQuestion].selectedAnswer = Object.keys(selectedOption)[0]; // Store the text of the selected option
-    shuffledQuestions[currentQuestion].isCorrect = isCorrect;
-
-    // Enable the next button (unless it's the last question)
+    // Enable next button (unless last question)
     nextButton.disabled = (currentQuestion === shuffledQuestions.length - 1);
 
-
-    const questionData = shuffledQuestions[currentQuestion];
-    if (questionData.explanation && questionData.explanation.trim() !== "") {
-        // Add the explanation block using the helper function
+    // Handle explanation and auto-next/pause
+    if (questionData.explanation?.trim()) {
         addExplanationBlock(questionData, answerWrapperElement);
-
-        pauseButton.classList.remove('hide'); // Show pause button when explanation appears
-        autoNextTimeout = setTimeout(nextQuestion, 3000); // 3 seconds delay with explanation
-    } else {
-        // No explanation, move faster
-        autoNextTimeout = setTimeout(nextQuestion, 500); // 500ms delay without explanation
-    }
-}
-
-function findNextUnansweredQuestion() {
-     // Start searching from the question *after* the current one
-    for (let i = currentQuestion + 1; i < shuffledQuestions.length; i++) {
-        if (shuffledQuestions[i] && !shuffledQuestions[i].answered) {
-            return i;
+        pauseButton.classList.remove("hide");
+        if (!isPaused) { // Only start timer if not already paused
+             autoNextTimeout = setTimeout(nextQuestion, 3000);
         }
-    }
-     // If not found after current, check from the beginning up to current
-     for (let i = 0; i < currentQuestion; i++) {
-         if (shuffledQuestions[i] && !shuffledQuestions[i].answered) {
-             return i;
-         }
-     }
-    return -1; // No unanswered questions found
-}
-
-function countUnansweredQuestions() {
-    return shuffledQuestions.filter((q) => q && !q.answered).length;
-}
-
-function nextQuestion() {
-    if (!pauseButton || !quizScreen || !endScreen) return; // Safety check
-    // Clear intervals/timeouts from previous question state
-    clearInterval(typingInterval);
-    clearTimeout(autoNextTimeout);
-    pauseButton.classList.add('hide'); // Hide pause button when manually going next/prev
-
-    const isCurrentlyPaused = isPaused; // Store current pause state
-
-    if (isCurrentlyPaused) {
-         isPaused = false; // Set back to not paused before potentially starting timer
-         console.log("Resuming from pause via Next button");
-     }
-
-    const nextUnansweredIndex = findNextUnansweredQuestion();
-
-    if (nextUnansweredIndex !== -1) {
-        currentQuestion = nextUnansweredIndex;
-        selectedAnswer = null;
-        displayQuestion();
-        if (isCurrentlyPaused) {
-             startTimer(); // Resume timer only if it was paused
-         }
     } else {
-        // No more unanswered questions, end the quiz
-        clearInterval(timerInterval);
-        quizScreen.classList.add("hide");
-        endScreen.classList.remove("hide");
-        endQuiz();
-    }
-}
-
-function previousQuestion() {
-     if (!pauseButton || !nextButton) return; // Safety check
-    // Clear intervals/timeouts from previous question state
-    clearInterval(typingInterval);
-    clearTimeout(autoNextTimeout);
-    pauseButton.classList.add('hide'); // Hide pause button when manually going next/prev
-
-    const isCurrentlyPaused = isPaused; // Store current pause state
-
-    if (isCurrentlyPaused) {
-         isPaused = false; // Set back to not paused before potentially starting timer
-         console.log("Resuming from pause via Previous button");
-     }
-
-    if (currentQuestion > 0) {
-        currentQuestion--;
-        selectedAnswer = null; // Reset selected answer state
-        displayQuestion(); // Display the previous question
-        nextButton.disabled = false; // Previous implies next is possible
-
-        if (isCurrentlyPaused) {
-             startTimer(); // Resume timer only if it was paused
+         if (!isPaused) { // Only start timer if not already paused
+            autoNextTimeout = setTimeout(nextQuestion, 500);
          }
-
     }
-    // Do nothing if already on the first question
 }
 
+
+/**
+ * Finds the index of the next unanswered question in the `shuffledQuestions` array,
+ * wrapping around if necessary.
+ * @returns {number} The index of the next unanswered question, or -1 if all are answered.
+ */
+function findNextUnansweredQuestion() {
+  for (let i = currentQuestion + 1; i < shuffledQuestions.length; i++) {
+    if (shuffledQuestions[i] && !shuffledQuestions[i].answered) return i;
+  }
+  for (let i = 0; i < currentQuestion; i++) {
+    if (shuffledQuestions[i] && !shuffledQuestions[i].answered) return i;
+  }
+  return -1;
+}
+
+/**
+ * Moves the quiz to the next unanswered question, or ends the quiz if none remain.
+ * Resumes the timer if it was paused via the pause button.
+ */
+function nextQuestion() {
+  if (!pauseButton || !quizScreen || !endScreen) return;
+
+  clearTimeout(autoNextTimeout);
+  pauseButton.classList.add("hide");
+
+  if (isPaused) {
+      console.log("Resuming from pause via Next button.");
+      isPaused = false;
+      startTimer(); // Resume timer countdown
+  }
+
+  const nextIndex = findNextUnansweredQuestion();
+  if (nextIndex !== -1) {
+      console.log(`Moving to next unanswered question: ${nextIndex + 1}`);
+      currentQuestion = nextIndex;
+      displayQuestion();
+  } else {
+      console.log("All questions answered. Ending quiz.");
+      endQuiz();
+  }
+}
+
+/**
+ * Moves the quiz to the previous question. Allows reviewing answered questions.
+ * Resumes the timer if it was paused via the pause button.
+ */
+function previousQuestion() {
+    if (!pauseButton || !nextButton || currentQuestion <= 0) return;
+
+    clearTimeout(autoNextTimeout);
+    pauseButton.classList.add("hide");
+
+    if (isPaused) {
+        console.log("Resuming from pause via Previous button.");
+        isPaused = false;
+        startTimer(); // Resume timer countdown
+    }
+
+    console.log(`Moving to previous question: ${currentQuestion}`);
+    currentQuestion--;
+    displayQuestion();
+    nextButton.disabled = false; // Ensure next is enabled when going back
+}
+
+
+/**
+ * Stops the quiz immediately (e.g., via the Stop button).
+ * Clears timers and transitions to the end screen.
+ */
 function stopQuiz() {
-    if (!quizScreen || !endScreen || !pauseButton || !nextButton) return; // Safety check
-    clearInterval(timerInterval); // Stop the timer
-    clearTimeout(autoNextTimeout); // Stop any auto-next
-    quizScreen.classList.add("hide");
-    endScreen.classList.remove("hide");
-    pauseButton.classList.add('hide'); // Hide pause button when quiz is stopped
-    hideQuiz(); // Hide quiz elements if necessary
-    calculateAndDisplayResults();
-    nextButton.disabled = false; // Reset next button state
+  console.log("Quiz stopped manually.");
+  if (!quizScreen || !endScreen || !pauseButton) return;
+
+  clearInterval(timerInterval);
+  clearTimeout(autoNextTimeout);
+
+  quizScreen.classList.add("hide");
+  endScreen.classList.remove("hide");
+  pauseButton.classList.add("hide");
+
+  hideQuiz();
+  calculateAndDisplayResults();
+  if(nextButton) nextButton.disabled = false;
 }
 
-function displayFinalResults() {
-    if (!quizScreen || !endScreen || !pauseButton) return; // Safety check
-    clearInterval(timerInterval); // Ensure timer is stopped
-    clearTimeout(autoNextTimeout); // Ensure auto-next is stopped
+/**
+ * Handles the natural end of the quiz (time runs out or all questions answered).
+ * Clears timers and transitions to the end screen.
+ */
+function endQuiz() {
+    console.log("Quiz ended.");
+    if (!quizScreen || !endScreen || !pauseButton) return;
+
+    clearInterval(timerInterval);
+    clearTimeout(autoNextTimeout);
+
     quizScreen.classList.add("hide");
     endScreen.classList.remove("hide");
-    pauseButton.classList.add('hide'); // Hide pause button on end quiz
+    pauseButton.classList.add("hide");
+
+    hideQuiz();
     calculateAndDisplayResults();
 }
 
+/**
+ * Calculates the final score and statistics based on the `shuffledQuestions` array
+ * and displays them on the end screen.
+ */
 function calculateAndDisplayResults() {
-    if (!scoreElement || !totalScoreElement) return; // Safety check
-    clearInterval(timerInterval); // Ensure timer is stopped again
+    console.log(`DEBUG: calculateAndDisplayResults - Running. shuffledQuestions.length: ${shuffledQuestions.length}`);
+    if (!scoreElement || !totalScoreElement || !endScreen) return;
 
-    let correctCount = 0,
-        wrongCount = 0,
-        totalScore = 0;
+    clearInterval(timerInterval); // Ensure timer is stopped
 
-    // Iterate through all SHUFFLED questions used in this quiz instance
-    shuffledQuestions.forEach((q) => {
-        if (q && q.answered) { // Check if question exists and was answered
-            if (q.isCorrect) {
-                correctCount++;
-                totalScore++; // Add 1 point for each correct answer (or adjust scoring logic here)
-            } else {
-                wrongCount++;
-            }
+    let correctCount = 0;
+    let wrongCount = 0;
+
+    shuffledQuestions.forEach(q => {
+        if (q?.answered) {
+            if (q.isCorrect) correctCount++;
+            else wrongCount++;
         }
     });
 
     const totalAttempted = correctCount + wrongCount;
     const notAnsweredCount = shuffledQuestions.length - totalAttempted;
-    const totalQuestionsInQuiz = shuffledQuestions.length; // Base score on actual questions shown
+    const totalQuestionsInQuiz = shuffledQuestions.length; // Use the actual number of questions in this quiz session
 
-    // Clear existing content safely
-    scoreElement.textContent = "";
-    totalScoreElement.textContent = "";
-    // Select elements inside the function as they are on the end screen
-    const correctCountEl = document.querySelector(".correct-count");
-    const wrongCountEl = document.querySelector(".wrong-count");
-    const notAnsweredCountEl = document.querySelector(".not-answered-count");
+    // Get end screen elements
+    const correctCountEl = endScreen.querySelector(".correct-count");
+    const wrongCountEl = endScreen.querySelector(".wrong-count");
+    const notAnsweredCountEl = endScreen.querySelector(".not-answered-count");
 
-    if (correctCountEl) correctCountEl.textContent = "";
-    if (wrongCountEl) wrongCountEl.textContent = "";
-    if (notAnsweredCountEl) notAnsweredCountEl.textContent = "";
+    // Display results
+    scoreElement.textContent = correctCount.toString();
+    totalScoreElement.textContent = totalQuestionsInQuiz.toString(); // Display the correct total
+    if (correctCountEl) correctCountEl.textContent = correctCount.toString();
+    if (wrongCountEl) wrongCountEl.textContent = wrongCount.toString();
+    if (notAnsweredCountEl) notAnsweredCountEl.textContent = notAnsweredCount.toString();
+
+    console.log(`Final Results: Correct: ${correctCount}, Wrong: ${wrongCount}, Not Answered: ${notAnsweredCount}, Total: ${totalQuestionsInQuiz}`);
+}
 
 
-    // Create an array of results to type out
-    const results = [
-        { element: scoreElement, value: totalScore.toString() }, // Display total score achieved
-        { element: totalScoreElement, value: totalQuestionsInQuiz.toString() }, // Display total possible score (number of questions)
-        {
-            element: correctCountEl,
-            value: correctCount.toString(),
-        },
-        {
-            element: wrongCountEl,
-            value: wrongCount.toString(),
-        },
-        {
-            element: notAnsweredCountEl,
-            value: notAnsweredCount.toString(),
-        },
-    ];
-
-    // Type out each result sequentially
-    function typeOutResults(index) {
-         // Check if elements exist before trying to type
-        if (results && Array.isArray(results) && index < results.length && results[index].element) {
-            typeText(results[index].element, results[index].value, 150).then(() => { // Faster typing for results
-                typeOutResults(index + 1);
-            });
-        } else if (index >= results.length) {
-             // All results typed
-         } else {
-             // Element missing, skip to next
-             console.warn("Result element missing for index:", index);
-             typeOutResults(index + 1);
-         }
+/**
+ * Resets the quiz state and returns the user to the start screen
+ * for the current subject, reloading history and re-initializing UI elements.
+ */
+async function restartQuiz() {
+    console.log("Restarting quiz...");
+    if (!endScreen || !quizScreen || !startScreen || !pauseButton || !errorMessage || !subjectName) {
+        console.error("Cannot restart quiz: Missing elements or subject name.");
+        return;
     }
 
-    // Start typing results
-    typeOutResults(0);
-}
+    // Stop ongoing processes
+    clearInterval(timerInterval);
+    clearTimeout(autoNextTimeout);
 
-function endQuiz() {
-    displayFinalResults();
-}
-
-function startTimer() {
-    console.log("startTimer called (resuming or starting)");
-    clearInterval(timerInterval); // Clear any existing interval first
-     if (!timeLimitInput || !progressText) return; // Safety check
-
-    // DO NOT RESET timeRemaining here. It's set in startQuiz() initially.
-    const progressBar = document.querySelector(".progress-bar");
-
-     // Ensure progressBar exists
-     if (!progressBar) {
-         console.error("Progress bar element not found!");
-         return;
-     }
-
-    // Calculate initial percentage based on current timeRemaining
-    const totalDuration = parseInt(timeLimitInput.value) * 60;
-     // Avoid division by zero or negative duration
-     const initialPercentage = totalDuration > 0 ? (timeRemaining / totalDuration) * 100 : 0;
-     progressBar.style.width = `${initialPercentage}%`;
-     progressText.style.color = initialPercentage >= 49.5 ? "#fff" : "#000";
-
-
-    timerInterval = setInterval(() => {
-        if (!isPaused) { // Only decrement time if not paused
-            if (timeRemaining > 0) {
-                 timeRemaining--;
-             }
-
-
-            const hours = Math.floor(timeRemaining / 3600);
-            const minutes = Math.floor((timeRemaining % 3600) / 60);
-            const seconds = timeRemaining % 60;
-
-            // Format time string
-             let timeString = "";
-             if (hours > 0) {
-                 timeString = `${hours}h ${minutes}m ${seconds}s`;
-             } else if (minutes > 0) {
-                 timeString = `${minutes}m ${seconds}s`;
-             } else {
-                 timeString = `${seconds}s`;
-             }
-             // Check progressText again inside interval
-             if(progressText) progressText.innerHTML = timeString;
-
-
-            const currentTotalDuration = parseInt(timeLimitInput.value) * 60;
-             // Avoid division by zero
-             const percentageRemaining = currentTotalDuration > 0 ? (timeRemaining / currentTotalDuration) * 100 : 0;
-
-            if(progressBar) progressBar.style.width = `${percentageRemaining}%`;
-            if(progressText) progressText.style.color = percentageRemaining >= 49.5 ? "#fff" : "#000";
-
-
-            if (timeRemaining <= 0) {
-                console.log("Time ran out!");
-                clearInterval(timerInterval);
-                if(quizScreen) quizScreen.classList.add("hide");
-                if(endScreen) endScreen.classList.remove("hide");
-                if(pauseButton) pauseButton.classList.add('hide'); // Hide pause button when time runs out
-                hideQuiz();
-                endQuiz(); // Go directly to end results when time runs out
-            }
-        }
-    }, 1000);
-}
-
-function restartQuiz() {
-     if (!endScreen || !quizScreen || !startScreen || !pauseButton || !errorMessage) return; // Safety check
-    clearInterval(timerInterval); // Stop any running timer
-    clearTimeout(autoNextTimeout); // Stop any auto-next
+    // Reset UI
     endScreen.classList.add("hide");
-    quizScreen.classList.add("hide"); // Ensure quiz screen is hidden too
+    quizScreen.classList.add("hide");
     startScreen.classList.remove("hide");
-    pauseButton.classList.add('hide'); // Hide pause button on restart
-    hideQuiz(); // Reset UI elements if needed
-    // Reset necessary variables for a fresh start
+    pauseButton.classList.add("hide");
+    hideError();
+    hideQuiz();
+
+    // Reset state variables
     currentQuestion = 0;
     score = 0;
     selectedAnswer = null;
     shuffledQuestions = [];
     isPaused = false;
-    timeRemaining = 0; // Will be set again in startQuiz
+    timeRemaining = 0;
 
-     // Reset input fields to defaults (optional, based on desired behavior)
-     // if(questionLimitInput) questionLimitInput.value = 30;
-     // if(timeLimitInput) timeLimitInput.value = 30;
-     // if(quizLessonDropdown) quizLessonDropdown.value = "সকল পাঠ";
-     // updateMinLimitsForLesson(); // Update limits based on default lesson
+    // Reset inputs/dropdown
+    if (questionLimitInput) questionLimitInput.value = 30;
+    if (timeLimitInput) timeLimitInput.value = 30;
+    if (quizLessonDropdown) quizLessonDropdown.value = "সকল পাঠ";
 
-     // Clear potential error messages
-     errorMessage.textContent = "";
-     errorMessage.classList.add("hide");
+    // Reload history
+    await loadQuestionHistory();
 
-     // Re-enable start button if it was disabled by errors
-     // validateInputs(); // Re-validate to potentially enable start button
-
-
-    // We don't reset questionHistory here by default, so it persists between quiz attempts
-}
-
-function handlePauseButtonClick() {
-    if (!pauseButton) return; // Safety check
-    // Only pause if the button is visible (meaning explanation is shown) and not already paused
-    if (!pauseButton.classList.contains('hide') && !isPaused) {
-        isPaused = true; // Set pause flag FIRST
-        clearInterval(timerInterval); // Stop timer
-        clearTimeout(autoNextTimeout); // Stop auto-next
-        pauseButton.classList.add('hide'); // Hide pause button
-        console.log("Quiz paused via button, isPaused:", isPaused);
+    // Re-initialize start screen
+    if (data && subjectName) {
+        populateLessonDropdown(subjectName);
+        showStartScreen(subjectName); // Calls updateMinLimits -> validateInputs
     } else {
-         console.log("Pause button clicked but already paused or hidden.");
-     }
+        console.error("Cannot re-initialize start screen: Data or subjectName missing.");
+        displayError("Error restarting quiz. Please refresh.");
+        if (startButton) startButton.disabled = true;
+    }
 }
 
-window.addEventListener("message", async function (event) {
-    // Marked function as async
-    if (event.data === "closeQuiz") {
-        closeQuiz();
-    } else if (event.data.subjectName) {
-        subjectName = event.data.subjectName;
-        console.log("Received subject name:", subjectName);
+// --- Timer and Pause Logic ---
 
-        // Get elements needed for setting text (ensure they are assigned in DOMContentLoaded)
-        const quizHeadingElement = quizHeading; // Use variable assigned in DOMContentLoaded
-        const endScreenHeadingElement = document.getElementById("end-screen-heading"); // Can get this here if needed
-        const timeLimitLabelElement = document.getElementById("time-limit-label");
-        const questionLimitLabelElement = document.getElementById("question-limit-label");
-        const startButtonElement = document.getElementById("start-button"); // Assuming start button has id="start-button"
-        const quizLessonLabelElement = document.getElementById("quiz-lesson-label");
+/**
+ * Starts or resumes the quiz timer countdown. Updates the progress bar and text display.
+ * Ends the quiz if time runs out.
+ */
+function startTimer() {
+  console.log("Timer starting/resuming...");
+  clearInterval(timerInterval);
 
+  if (!timeLimitInput || !progressText) {
+    console.error("Cannot start timer: Required elements missing.");
+    return;
+  }
+  const progressBar = document.querySelector(".progress-bar");
+  if (!progressBar) {
+    console.error("Progress bar element not found!");
+    return;
+  }
 
-        // Use the subjectName to set the headings (typing effect)
-        if (quizHeadingElement) { // Check if element exists
-             typeText(quizHeadingElement, subjectName, 30);
-         } else { console.warn("Quiz heading element not ready for typing.")}
-        if (endScreenHeadingElement) { // Check if element exists
-             typeText(endScreenHeadingElement, subjectName, 30);
-         }
+  const totalDuration = parseInt(timeLimitInput.value) * 60;
 
+  const updateDisplay = () => {
+    if (totalDuration <= 0) return;
 
-        // Reset input fields to default values (add null checks)
-        if (timeLimitInput) timeLimitInput.value = 30;
-        if (questionLimitInput) questionLimitInput.value = 30;
-        if (quizLessonDropdown) quizLessonDropdown.value = "সকল পাঠ"; // Reset lesson dropdown to default
+    const percentageRemaining = Math.max(0, (timeRemaining / totalDuration) * 100);
+    progressBar.style.width = `${percentageRemaining}%`;
 
+    const hours = Math.floor(timeRemaining / 3600);
+    const minutes = Math.floor((timeRemaining % 3600) / 60);
+    const seconds = timeRemaining % 60;
 
-        // Reset error message safely
-        if(errorMessage) {
-            errorMessage.textContent = "";
-            errorMessage.classList.add("hide");
-        }
+    let timeString = "";
+    if (hours > 0) timeString = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+    else if (minutes > 0) timeString = `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+    else timeString = `${seconds}s`;
+    progressText.innerHTML = timeString;
 
+    progressText.style.color = (percentageRemaining >= 49.5) ? "#fff" : "#000";
+  };
 
-        // --- RESTORED TYPETEXT CALLS ---
-        // Apply typing effect to labels and button
-        if (timeLimitLabelElement) {
-             typeText(timeLimitLabelElement, "মিনিট নির্ধারণ করুন :", 30);
-         }
-        if (questionLimitLabelElement) {
-             typeText(questionLimitLabelElement, "প্রশ্নের সংখ্যা নির্ধারণ করুন :", 30);
-         }
-        if (startButtonElement) { // Check if element exists
-             typeText(startButtonElement, "কুইজ শুরু করুন", 30);
-         }
-        if (quizLessonLabelElement) {
-             typeText(quizLessonLabelElement, "পাঠ নির্বাচন করুন :", 30); // Type lesson label
-         }
-        // --- END OF RESTORED CALLS ---
+  updateDisplay(); // Initial display
 
-        if (lessonDropdownMenu) lessonDropdownMenu.classList.add("hide"); // Initially hide, visibility will be handled later
-
-
-        // Load history and then data
-        try {
-             await loadQuestionHistory();
-             const fetchedData = await loadQuestionData(); // Assuming loadQuestionData is async or returns promise
-
-             if (fetchedData) {
-                 data = fetchedData;
-                 // Now safe to populate dropdown and show screen
-                 populateLessonDropdown(subjectName); // Populate lesson dropdown first
-                 showStartScreen(subjectName); // Then show the start screen which uses the data/lessons
-             } else {
-                 // Handle the case where data is null
-                 console.error("Data is null after load attempt.");
-                 displayError("Error loading questions. Please refresh the page.");
-             }
-         } catch (error) {
-             console.error("Error loading history or data:", error);
-             displayError("Failed to load quiz setup data. Please refresh.");
-         }
-
-
-    } else if (event.data === "reloadQuiz") {
-        // Handle quiz reload if needed
-        console.log("Received reloadQuiz message");
-        await loadQuestionHistory(); // Reload question history on quiz reload
-        // Potentially reload data as well if needed
-        // await loadQuestionData();
-        // Reset UI?
-        // restartQuiz(); // Example: Go back to start screen on reload
+  timerInterval = setInterval(() => {
+    if (!isPaused) {
+      if (timeRemaining > 0) {
+        timeRemaining--;
+        updateDisplay();
+      }
+      if (timeRemaining <= 0) {
+        console.log("Time ran out!");
+        clearInterval(timerInterval);
+        endQuiz();
+      }
     }
+  }, 1000);
+}
+
+/**
+ * Handles the click event for the pause button.
+ * Pauses the timer and the auto-next timeout if active and visible.
+ */
+function handlePauseButtonClick() {
+  if (!pauseButton || isPaused || pauseButton.classList.contains('hide')) return;
+
+  console.log("Quiz paused via button.");
+  isPaused = true;
+  clearInterval(timerInterval);
+  clearTimeout(autoNextTimeout);
+  pauseButton.classList.add("hide"); // Hide button after pausing
+}
+
+// --- Communication with Parent Window ---
+
+/**
+ * Listens for messages from the parent window (e.g., to set subject, close, reload).
+ */
+window.addEventListener("message", async (event) => {
+  // Optional: Add origin check for security if deployed in a specific context
+  // if (event.origin !== "YOUR_EXPECTED_ORIGIN") return;
+
+  const messageData = event.data;
+
+  if (messageData === "closeQuiz") {
+    console.log("Received 'closeQuiz' message.");
+    closeQuiz();
+  } else if (messageData?.subjectName) {
+    subjectName = messageData.subjectName;
+    console.log(`Received subject name: ${subjectName}`);
+
+    // Set text content directly
+    if (quizHeading) quizHeading.textContent = subjectName;
+    const endScreenHeading = document.getElementById("end-screen-heading");
+    if (endScreenHeading) endScreenHeading.textContent = subjectName;
+    const timeLimitLabel = document.getElementById("time-limit-label");
+    if (timeLimitLabel) timeLimitLabel.textContent = "মিনিট নির্ধারণ করুন :";
+    const questionLimitLabel = document.getElementById("question-limit-label");
+    if (questionLimitLabel) questionLimitLabel.textContent = "প্রশ্নের সংখ্যা নির্ধারণ করুন :";
+    const startButtonEl = document.getElementById("start-button");
+    if (startButtonEl) startButtonEl.textContent = "কুইজ শুরু করুন";
+    const quizLessonLabel = document.getElementById("quiz-lesson-label");
+    if (quizLessonLabel) quizLessonLabel.textContent = "পাঠ নির্বাচন করুন :";
+
+    // Reset inputs/UI
+    if (timeLimitInput) timeLimitInput.value = 30;
+    if (questionLimitInput) questionLimitInput.value = 30;
+    if (quizLessonDropdown) quizLessonDropdown.value = "সকল পাঠ";
+    if (lessonDropdownMenu) lessonDropdownMenu.classList.add("hide");
+    hideError();
+
+    // Load data and set up start screen
+    try {
+        await loadQuestionHistory(); // Load history first
+        const fetchedData = await loadQuestionData(); // Then load main data
+
+        if (fetchedData) {
+            data = fetchedData;
+            populateLessonDropdown(subjectName); // Populate dropdown based on data
+            showStartScreen(subjectName); // Show screen, update limits based on dropdown/data
+        } else {
+            console.error("Data is null after load attempt for subject:", subjectName);
+            displayError("Error loading questions for this subject. Please refresh.");
+            if (startButton) startButton.disabled = true;
+        }
+    } catch (error) {
+        console.error("Error during initial setup (history/data loading):", error);
+        displayError("Failed to load quiz setup data. Please refresh.");
+         if (startButton) startButton.disabled = true;
+    }
+  } else if (messageData === "reloadQuiz") {
+    console.log("Received 'reloadQuiz' message. Restarting...");
+    await loadQuestionHistory(); // Reload history
+    restartQuiz(); // Go back to start screen for current subject
+  }
 });
 
+/**
+ * Sends a message to the parent window to request closing the quiz iframe/container.
+ * Cleans up local timers.
+ */
 function closeQuiz() {
-    window.parent.postMessage("closeQuiz", "*");
-    // Optionally clear intervals/state before closing
-    clearInterval(timerInterval);
-    clearTimeout(autoNextTimeout);
-    // window.location.reload(); // Reloading might not be desired if parent handles closing
+  console.log("Sending 'closeQuiz' message to parent.");
+  if (window.parent && window.parent !== window) {
+       window.parent.postMessage({ type: "closeQuiz" }, "*"); // Consider specifying target origin for security
+  }
+  clearInterval(timerInterval);
+  clearTimeout(autoNextTimeout);
 }
 
-function typeText(element, text, speed, callback) {
-    return new Promise((resolve) => {
-         // Ensure element exists and text is a string
-         if (!element || typeof text !== 'string') {
-             console.warn("typeText: Invalid element or text provided.");
-             if (callback) callback();
-             resolve();
-             return;
-         }
+// --- UI Visibility and Styling ---
 
-        let i = 0;
-        element.innerHTML = ""; // Clear existing content
-
-        // Clear previous interval on this specific element if it exists
-        if (element.typingInterval) {
-            clearInterval(element.typingInterval);
-            element.typingInterval = null;
-        }
-
-
-        const interval = setInterval(function () {
-            if (i >= text.length) {
-                clearInterval(interval);
-                element.typingInterval = null; // Clear the stored interval ID
-                if (callback) callback();
-                resolve(); // Resolve the promise here
-                return;
-            }
-
-            const char = text.charAt(i);
-
-             // Simplified logic - assumes pre-processed text for complex HTML
-             if (char === '\n') {
-                 element.appendChild(document.createElement('br'));
-             } else {
-                  // Append character by character for typing effect
-                  element.innerHTML += char;
-             }
-             i++;
-
-        }, speed);
-
-        element.typingInterval = interval; // Store interval ID on the element
-    });
-}
-
-function shuffleArray(array) {
-     // Make a copy to avoid modifying the original array if it's passed by reference elsewhere
-     const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
-    }
-    return shuffled;
-}
-
+/**
+ * Makes the main quiz screen visible and sets appropriate styles.
+ */
 function showQuiz() {
-     if (!quizScreen || !quizHeading) return; // Safety check
-    const quizContainer = quizScreen; // Use assigned variable
-    if (quizContainer) {
-         quizContainer.classList.add("show");
-         quizContainer.classList.remove("hide"); // Explicitly remove hide
-     }
-    document.body.style.backgroundColor = "#fff"; // Set background for quiz
-
-    // Clear the quiz heading before applying the typing effect
-    quizHeading.textContent = "";
-    typeText(quizHeading, subjectName || "Quiz", 30); // Use subjectName or default
+  if (!quizScreen || !quizHeading) return;
+  quizScreen.classList.add("show");
+  quizScreen.classList.remove("hide");
+  document.body.style.backgroundColor = "#fff";
+  if (quizHeading) quizHeading.textContent = subjectName || "Quiz";
 }
 
+/**
+ * Hides the main quiz screen and resets associated styles.
+ */
 function hideQuiz() {
-     if (!quizScreen) return; // Safety check
-    const quizContainer = quizScreen; // Use assigned variable
-     if (quizContainer) {
-         quizContainer.classList.remove("show");
-         quizContainer.classList.add("hide"); // Explicitly add hide
-     }
-    document.body.style.backgroundColor = ""; // Reset background
+  if (!quizScreen) return;
+  quizScreen.classList.remove("show");
+  quizScreen.classList.add("hide");
+  document.body.style.backgroundColor = "";
 }
 
-function populateLessonDropdown(subjectName) {
-     if (!quizLessonDropdown || !lessonDropdownMenu || !data || !data.sections) {
-         console.warn("Cannot populate lesson dropdown: Elements or data not ready.");
-         if(lessonDropdownMenu) lessonDropdownMenu.classList.add("hide"); // Hide if possible
-         return;
-     }
-    // Use assigned variable
-    const lessonDropdown = quizLessonDropdown;
-    lessonDropdown.innerHTML = '<option value="সকল পাঠ">সকল পাঠ</option>'; // Reset dropdown with default option
-
-    const section = data.sections.find((s) => s.section === subjectName);
-    if (section && section.questions && Array.isArray(section.questions)) {
-        const lessons = new Set(); // Use Set for unique lessons
-        section.questions.forEach((question) => {
-            if (question && question.lesson) { // Check question and lesson exist
-                lessons.add(question.lesson);
-            }
-        });
-
-        if (lessons.size > 0) {
-            // Sort lessons alphabetically or numerically if needed
-            const sortedLessons = Array.from(lessons).sort();
-
-             sortedLessons.forEach((lesson) => {
-                const option = document.createElement("option");
-                option.value = lesson;
-                option.textContent = lesson;
-                lessonDropdown.appendChild(option);
-            });
-            lessonDropdownMenu.classList.remove("hide"); // Show dropdown menu
-        } else {
-            lessonDropdownMenu.classList.add("hide"); // Hide dropdown menu if no lessons
-            console.log("No lessons found for this subject, hiding dropdown.");
-        }
-    } else {
-        lessonDropdownMenu.classList.add("hide"); // Hide dropdown menu if section or questions are missing
-        console.log("Section or questions not found for subject:", subjectName, ", hiding dropdown.");
-    }
-}
-
-function updateMinLimitsForLesson() {
-     // Add safety checks for elements
-     if (!questionLimitInput || !timeLimitInput || !quizLessonDropdown) {
-          console.warn("Cannot update limits: Input elements not ready.");
-          return;
-      }
-
-     // Ensure questions array is populated before proceeding
-     if (!questions || questions.length === 0) {
-         console.warn("Cannot update limits: questions array is empty or not yet loaded for the subject.");
-         // Set defaults or disable inputs if needed
-         questionLimitInput.min = 1;
-         timeLimitInput.min = 1;
-         questionLimitInput.max = 1; // Set max to 1 if no questions
-         timeLimitInput.max = 1;
-         questionLimitInput.value = 1;
-         timeLimitInput.value = 1;
-         validateInputs();
-         return;
-     }
-
-    const selectedLessonForLimit = quizLessonDropdown.value;
-    let filteredQuestionsForLimit = questions; // Start with all questions for the subject
-    let maxQuestionsForLesson;
-
-    if (selectedLessonForLimit !== "সকল পাঠ") {
-        filteredQuestionsForLimit = questions.filter(
-            (q) => q && q.lesson === selectedLessonForLimit // Add check for q existence
-        );
-    }
-     // If filtering results in an empty array (e.g., bad data), fall back?
-     if (!Array.isArray(filteredQuestionsForLimit)) {
-          console.error("Filtered questions is not an array for lesson:", selectedLessonForLimit);
-          filteredQuestionsForLimit = []; // Default to empty array
-      }
-
-     maxQuestionsForLesson = filteredQuestionsForLimit.length;
-
-
-    let newMinLimit;
-     // Determine minimum based on available questions
-     if (maxQuestionsForLesson <= 0) {
-         newMinLimit = 1; // Absolute minimum
-         maxQuestionsForLesson = 1; // Can't have 0 max
-     } else if (maxQuestionsForLesson < 10) {
-         newMinLimit = 1;
-     } else if (maxQuestionsForLesson < 30) {
-         newMinLimit = 10;
-     } else {
-         newMinLimit = 30; // Default min if 30+ questions
-     }
-
-
-    // Ensure min is not greater than max
-    newMinLimit = Math.min(newMinLimit, maxQuestionsForLesson);
-
-    questionLimitInput.min = newMinLimit;
-    timeLimitInput.min = newMinLimit; // Keep time min same as question min for simplicity
-    questionLimitInput.max = maxQuestionsForLesson; // Update max limit
-    timeLimitInput.max = maxQuestionsForLesson; // Update max limit
-
-    // Set default value to the calculated minimum, but don't exceed max
-     const currentQVal = parseInt(questionLimitInput.value) || newMinLimit;
-     const currentTVal = parseInt(timeLimitInput.value) || newMinLimit;
-     questionLimitInput.value = Math.min(Math.max(currentQVal, newMinLimit), maxQuestionsForLesson);
-     timeLimitInput.value = Math.min(Math.max(currentTVal, newMinLimit), maxQuestionsForLesson);
-
-
-    validateInputs(); // Re-validate inputs to update error message if needed
-}
-
+/**
+ * Sets up and displays the initial start screen for the given subject.
+ * Populates/updates UI elements based on the subject's data and questions.
+ * @param {string} subjectName The name of the subject to display.
+ */
 function showStartScreen(subjectName) {
-    // Add safety checks for elements
-    if (!startScreen || !startScreenHeading || !data || !data.sections || !questionLimitInput || !timeLimitInput || !quizLessonDropdown || !startButton || !quizScreen || !endScreen || !lessonDropdownMenu) {
-         console.error("Cannot show start screen: Required elements or data not ready.");
-         displayError("Initialization error. Please refresh.");
-         return;
-     }
+  const elements = [startScreen, startScreenHeading, data, data?.sections, questionLimitInput, timeLimitInput, quizLessonDropdown, startButton, quizScreen, endScreen, lessonDropdownMenu, errorMessage];
+  if (elements.some(el => el === null || el === undefined)) {
+      console.error("Cannot show start screen: Required elements or data structure not ready.");
+      displayError("Initialization error. Please refresh.");
+      return;
+  }
 
-    // Apply typing effect to the heading:
-    typeText(startScreenHeading, subjectName || "Quiz Setup", 30); // Use subject or default
+  startScreenHeading.textContent = subjectName || "Quiz Setup";
 
-    // Find the section data for the current subject
-    const section = data.sections.find((s) => s.section === subjectName);
+  const section = data.sections.find((s) => s.section === subjectName);
 
-    if (section && section.questions) {
-        questions = section.questions; // Set the global 'questions' for the current subject
+  if (section?.questions?.length > 0) { // Check if questions exist and array has items
+      questions = section.questions.filter(q => q); // Set global 'questions', filtering invalid entries
+      console.log(`Found ${questions.length} valid questions for subject: ${subjectName}`);
 
-         // updateMinLimitsForLesson depends on the dropdown's CURRENT value
-         // and the global 'questions' array being set.
-         updateMinLimitsForLesson(); // Call to set initial min/max limits based on dropdown value
+      questionLimitInput.disabled = false;
+      timeLimitInput.disabled = false;
+      // Dropdown enabled state handled by populateLessonDropdown
 
-    } else {
-        console.error("Subject data or questions not found for:", subjectName);
-         // Handle missing subject data - maybe disable inputs, show error
-         questions = []; // Reset questions if subject not found
-         questionLimitInput.min = 1;
-         timeLimitInput.min = 1;
-         questionLimitInput.max = 1;
-         timeLimitInput.max = 1;
-         questionLimitInput.value = 1;
-         timeLimitInput.value = 1;
-         questionLimitInput.disabled = true;
-         timeLimitInput.disabled = true;
-         quizLessonDropdown.disabled = true;
-         startButton.disabled = true;
-        displayError(`Data for subject "${subjectName}" not found.`);
-        lessonDropdownMenu.classList.add("hide"); // Ensure dropdown is hidden
-    }
+      updateMinLimitsForLesson(); // Update limits based on default filter ("সকল পাঠ")
+  } else {
+      console.warn("No valid questions found for subject:", subjectName);
+      questions = [];
+      questionLimitInput.disabled = true;
+      timeLimitInput.disabled = true;
+      quizLessonDropdown.disabled = true;
+      lessonDropdownMenu.classList.add("hide");
+      startButton.disabled = true;
+      displayError(`No questions available for the subject "${subjectName}".`);
+      // Set safe defaults for limits
+      questionLimitInput.min = 1; timeLimitInput.min = 1;
+      questionLimitInput.max = 1; timeLimitInput.max = 1;
+      questionLimitInput.value = 1; timeLimitInput.value = 1;
+  }
 
-    // Make start screen visible
-    startScreen.classList.remove("hide");
+  // Show start screen, hide others
+  startScreen.classList.remove("hide");
+  quizScreen.classList.add("hide");
+  endScreen.classList.add("hide");
 
-    // Ensure other screens are hidden
-     quizScreen.classList.add("hide");
-     endScreen.classList.add("hide");
-
-
-     // Enable inputs that might have been disabled
-     questionLimitInput.disabled = false;
-     timeLimitInput.disabled = false;
-     quizLessonDropdown.disabled = false;
-     // Start button enabling/disabling is handled by validateInputs
-
-
-     validateInputs(); // Final validation check based on loaded limits
+  validateInputs(); // Final validation check
 }
 
-// Debounce or Throttle resize events if performance is an issue
-// window.addEventListener('resize', () => { /* Potentially re-adjust UI */ });
 
+/**
+ * Adds dynamic CSS rules for text highlighting and explanation blocks if not already present.
+ */
+function addHighlightCSS() {
+    if (document.getElementById("quiz-dynamic-styles")) return;
 
-// Initial setup happens in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-     console.log("DOM fully loaded and parsed.");
+    const style = document.createElement("style");
+    style.id = "quiz-dynamic-styles";
+    style.textContent = `
+        .highlight {
+            display: inline-block; background: linear-gradient(90deg, #84fab0, #8fd3f4);
+            font-weight: bold; border-radius: 6px; padding: 2px 6px;
+            margin: 1px 3px; color: #111; box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .explanation-container { margin-top: 25px; animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translate3d(0, 20px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        .explanation-heading {
+            font-size: 1.1em; font-weight: bold; color: #0056b3; margin-bottom: 10px;
+            display: flex; align-items: center; text-align: left;
+            border-bottom: 1px solid #eee; padding-bottom: 5px;
+        }
+        .explanation-heading-text { margin-right: 8px; }
+        .explanation-arrow-image {
+            width: 20px; height: auto; transform: rotate(350deg); display: inline-block;
+            vertical-align: middle; margin-left: 2px; margin-top: 0px; filter: brightness(1.1);
+        }
+        .question-explanation {
+            padding: 12px 15px; background-color: #f8f9fa; border: 1px solid #dee2e6;
+            border-radius: 6px; text-align: left; color: #343a40; font-size: 0.95em;
+            line-height: 1.6; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            word-wrap: break-word; overflow-y: auto; max-height: 300px;
+        }
+        .question-explanation .MathJax_Display { margin: 0.5em 0 !important; }
+        .question-explanation script { display: none !important; }
+        .question-explanation span > span > script { display: none !important; }
+    `;
+    document.head.appendChild(style);
+}
 
-     // --- Assign all DOM elements here ---
-     startScreenHeading = document.getElementById("start-screen-heading");
-     startScreen = document.querySelector(".start-screen");
-     quizScreen = document.querySelector(".quiz");
-     endScreen = document.querySelector(".end-screen");
-     questionElement = document.querySelector(".question");
-     answerWrapperElement = document.querySelector(".answer-wrapper");
-     nextButton = document.querySelector(".next");
-     scoreElement = document.querySelector(".final-score");
-     totalScoreElement = document.querySelector(".total-score");
-     progressText = document.querySelector(".progress-text");
-     timer = document.querySelector(".timer");
-     previousButton = document.querySelector(".previous");
-     stopButton = document.querySelector(".stop");
-     pauseButton = document.querySelector(".pause");
-     errorMessage = document.querySelector(".error-message");
-     startButton = document.querySelector(".start");
-     quizHeading = document.querySelector(".quiz-heading");
-     uContainer = document.getElementById("u-container");
-     numberProgressContainer = document.querySelector(".number-progress");
-     questionContainer = document.querySelector(".question");
-     questionLimitInput = document.getElementById("question-limit");
-     timeLimitInput = document.getElementById("time-limit");
-     quizLessonDropdown = document.getElementById("quiz-lesson");
-     lessonDropdownMenu = document.getElementById("lesson-dropdown-menu");
+// --- Deprecated Functions ---
 
-     // --- Initial Hiding and State ---
-     if (quizScreen) quizScreen.classList.add('hide');
-     if (endScreen) endScreen.classList.add('hide');
-     if (startScreen) startScreen.classList.add('hide'); // Hide start screen until subject received
-     if (pauseButton) pauseButton.classList.add('hide'); // Ensure pause button is hidden initially
-     if (lessonDropdownMenu) lessonDropdownMenu.classList.add('hide'); // Hide lesson dropdown initially
-     if (nextButton) nextButton.disabled = false; // Set initial state if needed
-
-     // --- Add Event Listeners ---
-     if (startButton) {
-         startButton.addEventListener("click", startQuiz);
-         startButton.disabled = true; // Disable initially until data loads/validation passes
-     } else {
-         console.error("Start button with class '.start' not found in DOM!");
-     }
-
-     if (nextButton) {
-         nextButton.addEventListener("click", nextQuestion);
-     } else { console.error("Next button not found!")};
-
-     if (previousButton) {
-         previousButton.addEventListener("click", previousQuestion);
-     } else { console.error("Previous button not found!")};
-
-     if (stopButton) {
-         stopButton.addEventListener("click", stopQuiz);
-     } else { console.error("Stop button not found!")};
-
-     if (pauseButton) {
-         pauseButton.addEventListener("click", handlePauseButtonClick);
-     } else { console.error("Pause button not found!")};
-
-     const restartButton = document.querySelector(".restart");
-     if (restartButton) {
-         restartButton.addEventListener("click", restartQuiz);
-     } else { console.error("Restart button not found!")};
-
-     if (quizLessonDropdown) {
-         quizLessonDropdown.addEventListener("change", function () {
-             selectedLesson = this.value; // Update selectedLesson on dropdown change
-             updateMinLimitsForLesson(); // Call function to update min limits
-         });
-     } else {
-         console.error("Lesson dropdown with id 'quiz-lesson' not found in DOM!");
-     }
-
-     if (questionLimitInput) {
-         questionLimitInput.addEventListener("input", validateInputs);
-         restrictToNumbers(questionLimitInput);
-     } else {
-         console.error("Question limit input with id 'question-limit' not found in DOM!");
-     }
-
-     if (timeLimitInput) {
-         timeLimitInput.addEventListener("input", validateInputs);
-         restrictToNumbers(timeLimitInput);
-     } else {
-         console.error("Time limit input with id 'time-limit' not found in DOM!");
-     }
-
-      // --- Check if data has loaded and potentially enable start button ---
-      if (data) {
-          console.log("Data was already loaded before DOMContentLoaded.")
-          // We still need subjectName before enabling fully, validation handles the rest
-          // if (startButton) startButton.disabled = false; // Enable if data is ready
-      } else {
-          console.log("Waiting for data to load...");
+/**
+ * DEPRECATED: Simulates typing text into an element. Replaced by direct innerHTML assignment.
+ * Kept for reference.
+ * @param {HTMLElement} element The target element.
+ * @param {string} text The text to type.
+ * @param {number} speed Typing speed in milliseconds per character.
+ * @param {function} [callback] Optional callback function after typing finishes.
+ * @returns {Promise<void>}
+ */
+function typeText(element, text, speed, callback) {
+  // ... (implementation remains the same as before, but function is not called)
+  return new Promise((resolve) => {
+    if (!element || typeof text !== "string") {
+      console.warn("typeText: Invalid element or text provided.");
+      if (callback) callback(); resolve(); return;
+    }
+    let i = 0; element.innerHTML = "";
+    if (element.typingInterval) { clearInterval(element.typingInterval); element.typingInterval = null; }
+    const interval = setInterval(function () {
+      if (i >= text.length) {
+        clearInterval(interval); element.typingInterval = null;
+        if (callback) callback(); resolve(); return;
       }
-
-     // Request subject name from parent immediately if possible
-      console.log("Requesting subject name from parent...")
-     // window.parent.postMessage("requestSubjectName", "*"); // Example message
- });
-
-// Function to clear question history (optional, for testing or user preference)
-async function clearQuestionHistory() {
-    try {
-        await saveQuestionHistoryToDB({}); // Save an empty history object to clear it
-        questionHistory = {}; // Reset in-memory history
-         if (data && data.sections) {
-             data.sections.forEach((section) => {
-                 // Re-initialize history structure if needed
-                 questionHistory[section.section] = {};
-             });
-         }
-         console.log("Question history cleared.");
-    } catch (error) {
-        console.error("Error clearing question history:", error);
-         displayError("Could not clear question history.");
-    }
+      const char = text.charAt(i);
+      if (char === "\n") element.appendChild(document.createElement("br"));
+      else element.innerHTML += char;
+      i++;
+    }, speed);
+    element.typingInterval = interval;
+  });
 }
 
-// Example console command: clearQuestionHistory();
+// --- Initialization ---
+
+/**
+ * Main initialization function run after the DOM is fully loaded.
+ * Assigns DOM elements to variables and sets up initial event listeners.
+ */
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM fully loaded and parsed.");
+
+  // Assign DOM elements
+  startScreenHeading = document.getElementById("start-screen-heading");
+  startScreen = document.querySelector(".start-screen");
+  quizScreen = document.querySelector(".quiz");
+  endScreen = document.querySelector(".end-screen");
+  questionElement = document.querySelector(".question");
+  answerWrapperElement = document.querySelector(".answer-wrapper");
+  nextButton = document.querySelector(".next");
+  scoreElement = document.querySelector(".final-score");
+  totalScoreElement = document.querySelector(".total-score");
+  progressText = document.querySelector(".progress-text");
+  timer = document.querySelector(".timer");
+  previousButton = document.querySelector(".previous");
+  stopButton = document.querySelector(".stop");
+  pauseButton = document.querySelector(".pause");
+  errorMessage = document.querySelector(".error-message");
+  startButton = document.querySelector(".start");
+  quizHeading = document.querySelector(".quiz-heading");
+  numberProgressContainer = document.querySelector(".number-progress");
+  questionContainer = document.querySelector(".question-container");
+  questionLimitInput = document.getElementById("question-limit");
+  timeLimitInput = document.getElementById("time-limit");
+  quizLessonDropdown = document.getElementById("quiz-lesson");
+  lessonDropdownMenu = document.getElementById("lesson-dropdown-menu");
+
+  // Initial UI State
+  if (quizScreen) quizScreen.classList.add("hide");
+  if (endScreen) endScreen.classList.add("hide");
+  if (startScreen) startScreen.classList.add("hide");
+  if (pauseButton) pauseButton.classList.add("hide");
+  if (lessonDropdownMenu) lessonDropdownMenu.classList.add("hide");
+  if (errorMessage) errorMessage.classList.add("hide");
+  if (nextButton) nextButton.disabled = false;
+  if (startButton) startButton.disabled = true; // Start disabled until subject/data loaded
+
+  // Add Event Listeners
+  if (startButton) startButton.addEventListener("click", startQuiz);
+  else console.error("Start button not found!");
+
+  if (nextButton) nextButton.addEventListener("click", nextQuestion);
+  else console.error("Next button not found!");
+
+  if (previousButton) previousButton.addEventListener("click", previousQuestion);
+  else console.error("Previous button not found!");
+
+  if (stopButton) stopButton.addEventListener("click", stopQuiz);
+  else console.error("Stop button not found!");
+
+  if (pauseButton) pauseButton.addEventListener("click", handlePauseButtonClick);
+  else console.error("Pause button not found!");
+
+  const restartButton = document.querySelector(".restart");
+  if (restartButton) restartButton.addEventListener("click", restartQuiz);
+  else console.error("Restart button not found!");
+
+  if (quizLessonDropdown) {
+    quizLessonDropdown.addEventListener("change", function () {
+      selectedLesson = this.value;
+      updateMinLimitsForLesson(); // Update limits when filter changes
+    });
+  } else console.error("Lesson dropdown not found!");
+
+  if (questionLimitInput) {
+    questionLimitInput.addEventListener("input", validateInputs);
+    restrictToNumbers(questionLimitInput);
+  } else console.error("Question limit input not found!");
+
+  if (timeLimitInput) {
+    timeLimitInput.addEventListener("input", validateInputs);
+    restrictToNumbers(timeLimitInput);
+  } else console.error("Time limit input not found!");
+
+  console.log("Waiting for data and subject name message from parent...");
+
+  // Inform parent window that the quiz iframe is ready
+  console.log("Quiz iframe DOM ready, sending 'quizReady' message to parent.");
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'quizReady' }, '*');// Consider target origin
+  }
+
+  addHighlightCSS(); // Add dynamic CSS
+});
+
+/**
+ * Clears the entire question history from IndexedDB and resets the in-memory object.
+ * Re-initializes the history structure based on loaded data sections.
+ * Displays a confirmation message.
+ */
+async function clearQuestionHistory() {
+  try {
+    await saveQuestionHistoryToDB({}); // Save an empty object to clear DB
+    questionHistory = {}; // Reset in-memory history
+    // Re-initialize structure based on current data (if loaded)
+    if (data && data.sections) {
+      data.sections.forEach((section) => {
+        if (section?.section) {
+             questionHistory[section.section] = {};
+        }
+      });
+    }
+    console.log("Question history cleared.");
+    displayError("Question history has been cleared."); // Inform user
+    setTimeout(() => { if(errorMessage) hideError(); }, 3000); // Hide message after 3s
+  } catch (error) {
+    console.error("Error clearing question history:", error);
+    displayError("Could not clear question history.");
+  }
+}

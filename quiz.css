@@ -237,6 +237,7 @@ input[type="number"] {
   background-color: #fff;
   text-align: left;
   margin-bottom: 20px;
+  margin-top: 5px;
   animation: fadeInUp 1s;
 }
 
@@ -613,3 +614,9 @@ input[type="number"] {
 .pause:hover {
  background: #f0c06e; /* Lighter pause color on hover */
 }
+
+body.quiz-only-mode .start-screen {
+  display: none !important; /* Ensure start screen is hidden in quiz-only mode */
+}
+
+svg {width: 100% !important;height: 100% !important;max-width: 100% !important;}

@@ -1,0 +1,821 @@
+/* quiz.css */
+/* General Styles */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  animation: fadeIn 1s;
+}
+
+html, body {
+  scroll-behavior: smooth;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Container */
+.container {
+  background: #1f2847;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  animation: fadeIn 1s;
+  margin-top: 135px;
+}
+
+/* Heading */
+.heading {
+  font-size: 22px;
+  color: #fff;
+  margin-bottom: 20px;
+  animation: fadeInUp 1s;
+}
+
+/* Labels */
+label {
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #fff;
+  animation: fadeInUp 1s;
+}
+
+/* Inputs */
+input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  background: #fff;
+  color: #1f2847;
+  font-size: 14px;
+  text-align: center;
+  animation: fadeInUp 1s;
+}
+
+#limit {
+  margin-bottom: -10px;
+}
+
+/* Hide Elements */
+.hide {
+  display: none !important; /* Added !important to ensure it overrides other styles */
+}
+
+/* Overlap Adjust */
+#overlap-adjust {
+  position: relative;
+}
+
+/* Fixed Container */
+.u-container {
+  text-align: center;
+  position: fixed;
+  top: -10px;
+  padding: 1px;
+  background-color: #fff;
+  z-index: 1000;
+  box-sizing: border-box;
+  position: relative;
+  margin-bottom: -25px;
+}
+
+/* Number Progress */
+.number-progress {
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+  left: 25px;
+  right: 25px;
+  z-index: 10;
+  background-color: #fff;
+  text-align: center;
+  animation: fadeInUp 1s;
+}
+
+/* Floating Close Button */
+.floating-close {
+  background: #bde0c5;
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  transition: 0.4s ease;
+  cursor: pointer;
+  z-index: 1001;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: gradientChange 1s linear infinite;
+}
+
+.close {
+  position: relative;
+  height: 12px;
+  width: 15px;
+}
+
+.close::before,
+.close::after {
+  content: "";
+  position: absolute;
+  height: 1.5px;
+  width: 100%;
+  background-color: #202020;
+  border-radius: 2.5px;
+  transition: 0.4s ease;
+}
+
+.close::before {
+  transform: rotate(45deg);
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  translate: -50% -50%;
+}
+
+.close::after {
+  transform: rotate(135deg);
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  translate: -50% -50%;
+}
+
+/* Number and Timer Container */
+.number-container,
+.timer-container {
+  display: flex;
+  align-items: center;
+}
+
+.number-container {
+  position: fixed;
+  margin-right: 0px;
+}
+
+.number {
+  color: #a2aace;
+  font-size: 25px;
+  font-weight: 500;
+  align-items: center;
+  margin-right: 15px;
+  display: flex;
+  gap: 6px;
+  animation: fadeInUp 1s;
+}
+
+.number .total {
+  color: #576081;
+  font-size: 22px;
+}
+
+/* Progress Bar */
+.progress {
+  width: calc(100% - 100px);
+  height: 16.5px;
+  background: transparent;
+  border-radius: 25px;
+  overflow: hidden;
+  border: 0.5px solid #3f4868;
+  transform: translateX(0%);
+  margin-bottom: 5px;
+  margin-right: -3.5px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 2.5px;
+  background: linear-gradient(to right, #ea517c, #b478f1);
+  transition: 1s linear;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Timer */
+.timer {
+  color: #414557;
+  font-size: 16.5px;
+  font-weight: 500;
+  animation: fadeInUp 1s;
+}
+
+/* Questions and Answers */
+.question {
+  color: #000;
+  font-size: 18px;
+  font-weight: 500;
+  z-index: 10;
+  background-color: #fff;
+  text-align: left;
+  overflow-wrap: break-word;
+  margin-right: 4px;
+  margin-left: 0px;
+  animation: fadeInUp 1s;
+  margin-top: 10px;
+}
+
+.question h5 { /* Ensure question text itself is aligned left */
+    text-align: left;
+    line-height: 1.8; /* Adjust for readability with inputs */
+}
+
+.gap-input {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    font-size: 0.85em; /* Slightly larger to match typical question font */
+    margin: 0 3px; /* Space around the input */
+    width: auto;   /* Let it size based on content or add min-width */
+    min-width: 76px; /* Example: minimum width */
+    max-width: 150px;/* Example: maximum width */
+    border-radius: 29px;
+    text-align: center;
+    height: 27px;
+    vertical-align: baseline; /* Align with surrounding text */
+    box-sizing: border-box;
+}
+
+.gap-input:disabled {
+    color: #333; /* Darker text when disabled for readability */
+    cursor: default;
+}
+
+.question-wrapper, /* Not used for gap-fill answers, but keep for consistency */
+.answer-wrapper {   /* Used for explanation block */
+  background-color: #fff;
+  text-align: left;
+  margin-bottom: 20px;
+  margin-top: 5px;
+  animation: fadeInUp 1s;
+}
+
+/* Ensure explanation block is also left-aligned if it's inside answer-wrapper */
+.answer-wrapper .explanation-container,
+.answer-wrapper .question-explanation {
+    text-align: left;
+}
+.answer-wrapper .question-explanation ul {
+    list-style-type: none; /* Or your preferred list style */
+    padding-left: 10px; /* Indent list items */
+    margin-top: 5px;
+}
+.answer-wrapper .question-explanation li {
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+
+/* Quiz Heading */
+.quiz-heading {
+  color: #000;
+  font-size: 20px;
+  margin-top: 25px;
+  text-align: center;
+  margin: auto;
+  text-shadow:
+    -1px -1px 0 #ff0000,
+    1px -1px 0 #ea517c,
+    -1px 1px 0 #a8c2a8,
+    1px 1px 0 #b478f1;
+  text-align: center;
+  top: 11px;
+  left: 1px;
+  right: 2px;
+  width: 90%;
+  padding: 2px;
+  background-color: #fff;
+  z-index: 1000;
+  box-sizing: border-box;
+  animation: fadeInUp 1s;
+}
+
+/* Quiz */
+.quiz {
+  align-items: center;
+  /* padding: 26px; */
+  /* margin-bottom: 20px; */
+  border-radius: 10px;
+  text-decoration: none;
+  width: 100%;
+  max-width: auto;
+  margin: auto;
+  padding: 20px;
+  background-color: #fff;
+  overflow: auto;
+  height: 90vh;
+}
+
+/* Buttons */
+.btn {
+  width: 100%; /* Default width for Previous, Stop, Next */
+  height: 45px;
+  background: #ea517c;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 15.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s linear;
+  margin: 0 5px; /* Add some horizontal margin between buttons */
+}
+
+/* Adjust button widths when pause button is visible */
+.button-wrapper:not(:has(.pause.hide)) .btn:not(.pause) { /* Target Previous, Stop, Next when pause is visible */
+  width: 22%; /* Reduce width for these buttons */
+}
+
+.button-wrapper:not(:has(.pause.hide)) .pause { /* Target Pause button when it's visible */
+  width: 22%; /* Set width for Pause button to match others */
+}
+
+.btn:hover {
+  background: #8bb1d0;
+}
+
+.btn:disabled {
+  background: #576081;
+  cursor: not-allowed;
+}
+
+/* Specific Buttons */
+.previous {
+  animation: fadeInUp 1s;
+  background: #ea517c;
+  border: 0.5px solid #868698;
+  color: #fff;
+}
+
+.stop {
+  animation: fadeInUp 1s;
+  background: #ea517c;
+  border: 0.5px solid #ff0000;
+  color: #fff;
+}
+
+.next {
+  animation: fadeInUp 1s;
+  background: #ea517c;
+  border: 0.5px solid #868698;
+  color: #fff;
+}
+
+/* Button Wrapper */
+.button-wrapper {
+  display: flex;
+  justify-content: space-around;
+  position: fixed;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.button-wrapper .btn {
+  width: 30%;
+}
+
+/* End Screen */
+.end-screen .score {
+  color: #fff;
+  font-size: 25px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  animation: fadeInUp 1s;
+}
+
+.end-screen .score .score-text {
+  color: #a2aace;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 120px; /* Adjusted from 120px to 20px for better spacing */
+  animation: fadeInUp 1s;
+}
+
+/* Time and Question Limits */
+.time-limit,
+.question-limit {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  text-align: center;
+  animation: fadeInUp 1s;
+}
+
+.time-limit label,
+.question-limit label {
+  margin-bottom: 5px;
+  animation: fadeInUp 1s;
+}
+
+.time-limit input,
+.question-limit input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.options input:focus {
+  outline: none;
+  border-color: #0c80ef;
+}
+
+.time-limit span,
+.answer-status {
+  color: #fff;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.answer-status {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 30px;
+  animation: fadeInUp 1s;
+}
+
+/* Options Container */
+.options {
+  display: flex;
+  justify-content: space-between;
+  animation: fadeInUp 1s;
+}
+
+/* Each Option */
+.options > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 45%;
+  animation: fadeInUp 1s;
+}
+
+.options label,
+.options input {
+  margin-bottom: 10px;
+  animation: fadeInUp 1s;
+}
+
+.options input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 14px;
+  animation: fadeInUp 1s;
+}
+
+.options input:focus {
+  outline: none;
+  border-color: #0c80ef;
+}
+
+/* Error Message */
+.error-message {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 0px;
+  margin-bottom: 17.5px;
+  animation: fadeInUp 1s;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mjx-mrow {
+   overflow-wrap: break-word;
+   word-break: normal;
+   line-height: 0.3;
+   margin-right: 4px;
+}
+
+.MathJax_Menu{
+  display: none;
+}
+/* Dropdown Menu Container */
+.dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -17.5px;
+  text-align: center;
+  animation: fadeInUp 1s;
+  border-radius: 5px;
+}
+
+/* Quiz Name Label (above dropdown) */
+.quiz-name-label {
+  font-size: 13px;
+  color: #fff;
+  text-align: center;
+  display: block;
+  animation: fadeInUp 1s;
+}
+
+/* Dropdown Label */
+.dropdown-menu label {
+  font-size: 13px;
+  margin-bottom: 2.5px;
+  color: #fff;
+  animation: fadeInUp 1s;
+}
+
+/* Dropdown Select Box */
+.dropdown-menu select {
+  width: 57%;
+  padding: 7.5px;
+  border: none;
+  border-radius: 5px;
+  background: #fff;
+  color: #1f2847;
+  font-size: 14px;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  margin: 8px 10px 17.5px 10px;
+  border-radius: 5px;
+}
+
+/* Dropdown Menu Container - Initially Hidden */
+#lesson-dropdown-menu.hide {
+  display: none;
+}
+
+.pause {
+  animation: fadeInUp 1s;
+  background: #f0ad4e;
+  border: 0.5px solid #d9534f;
+  color: #fff;
+}
+
+.pause:hover {
+ background: #f0c06e;
+}
+
+body.quiz-only-mode .start-screen {
+  display: none !important;
+}
+
+svg {width: 100% !important;height: 100% !important;max-width: 100% !important;}
+
+/* Styles for AI Explanation Block */
+.explanation-container {
+    margin-top: 25px;
+    animation: fadeInUp 0.8s ease-out; /* Keep fade-in animation */
+}
+
+.explanation-heading {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #0056b3; /* Blue color for heading */
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    border-bottom: 1px solid #eee; /* Separator line */
+    padding-bottom: 5px;
+}
+
+.explanation-heading-text {
+    margin-right: 8px;
+}
+
+.explanation-arrow-image {
+    width: 20px; /* Adjust size as needed */
+    height: auto;
+    transform: rotate(350deg); /* Slight rotation */
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 2px;
+    margin-top: 0px;
+    filter: brightness(1.1); /* Make it slightly brighter */
+}
+
+.question-explanation {
+    padding: 12px 15px;
+    background-color: #f8f9fa; /* Light background */
+    border: 1px solid #dee2e6; /* Subtle border */
+    border-radius: 6px;
+    text-align: left;
+    color: #343a40; /* Darker text color */
+    font-size: 0.95em;
+    line-height: 1.6;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); /* Inner shadow */
+    word-wrap: break-word; /* Ensure long words break */
+    overflow-y: auto; /* Add scroll if content overflows */
+    max-height: 300px; /* Limit height */
+}
+
+/* Style for highlighted text within the explanation */
+.question-explanation .highlight {
+    display: inline-block; /* Allows padding/margin */
+    background: linear-gradient(90deg, #84fab0, #8fd3f4); /* Gradient background */
+    font-weight: bold;
+    border-radius: 6px; /* Rounded corners */
+    padding: 2px 6px; /* Padding around text */
+    margin: 1px 3px; /* Margin around the span */
+    color: #111; /* Dark text color */
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Subtle shadow */
+}
+
+/* Ensure MathJax elements inside explanation are styled correctly */
+.question-explanation .MathJax_Display {
+    margin: 0.5em 0 !important; /* Adjust margin for display math */
+}
+
+/* Hide MathJax script tags if they appear */
+.question-explanation script {
+    display: none !important;
+}
+.question-explanation span > span > script { /* Specificity for nested spans */
+    display: none !important;
+}
+
+/* Ensure typing cursor is styled */
+.typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em; /* Adjust to match line height */
+    background-color: #333;
+    animation: blink-caret 0.75s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+}
+@keyframes blink-caret {
+    from, to { background-color: transparent }
+    50% { background-color: #333; }
+}
+
+/* Error Modal Styles (already present, keeping for completeness) */
+.error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.error-modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 80%;
+    color: #333;
+    position: relative; /* Needed for close button positioning */
+}
+.error-modal-content h3 {
+    color: #d9534f;
+    margin-top: 0;
+}
+.error-modal-content button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+.error-modal-content button:hover {
+    background-color: #0056b3;
+}
+
+/* API Key Modal Specific Styles (already present, keeping for completeness) */
+.modal {
+  position: fixed;
+  z-index: 10000; /* Higher than other elements */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.6); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content h2 {
+  color: #1f2847;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.modal-input-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.modal-input-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 0.9em;
+}
+
+.modal-input-group input[type="password"],
+.modal-input-group select {
+  width: calc(100% - 20px); /* Adjust for padding */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+  color: #1f2847;
+  background-color: #fff;
+}
+
+.modal-input-group select:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.modal-error-message {
+  color: red;
+  font-size: 0.85em;
+  margin-top: -10px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modal-content .btn {
+  width: auto;
+  padding: 10px 25px;
+  font-size: 1em;
+  margin-top: 10px;
+}
+
+.close-button {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="quizlish.css" />
+    <title>Quiz</title>
+    <!-- Added Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added Marked.js CDN for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div class="start-screen">
+      <div class="container">
+        <div class="floating-close" onclick="closeQuiz()">
+          <div class="close"></div>
+        </div>
+        <h1 class="heading" id="start-screen-heading"></h1>
+        <div class="options">
+          <div class="time-limit">
+            <label for="time-limit" id="time-limit-label"></label>
+            <input type="number" id="time-limit" value="30"  />
+          </div>
+          <div class="question-limit">
+            <label for="question-limit" id="question-limit-label"></label>
+            <input type="number" id="question-limit" value="30"  />
+          </div>
+        </div>
+        <div class="dropdown-menu hide" id="lesson-dropdown-menu">
+          <div class="quiz-name-label" id="quiz-name-label"></div>
+          <label for="quiz-lesson" id="quiz-lesson-label"></label> <select
+            id="quiz-lesson"
+          >
+            <option value="সকল পাঠ"></option>
+          </select>
+        </div>
+        <p class="error-message hide" id="error-message"></p>
+        <button class="btn start" id="start-button"></button>
+      </div>
+    </div>
+
+    <div class="quiz hide" id="quiz-section">
+      <div class="u-container">
+        <div class="f" id="quiz-heading">
+          <span class="quiz-heading" id="fixed"></span>
+        </div>
+        <div class="number-progress" id="fixed">
+          <div class="number-container" id="overlap-adjust">
+            <div class="number">
+              প্রশ্ন <span class="current"></span> / <span class="total"></span>
+            </div>
+          </div>
+          <div class="progress" id="overlap-adjust">
+            <div class="progress-bar"></div>
+            <span class="progress-text"></span>
+          </div>
+          <div class="timer-container">
+            <div class="timer"></div>
+          </div>
+        </div>
+        <div class="question" id="relative"></div> </div>
+      <div class="answer-wrapper" id="answer-wrapper"></div>
+      <!-- Added Recheck and Regenerate Explanation Buttons Here -->
+      <div class="recheck-regenerate-wrapper" style="text-align: center; margin-top: 10px; margin-bottom: 10px;">
+        <button class="btn recheck hide" style="width: auto; padding: 5px 10px; font-size: 0.9em; margin-right: 5px; background-color: #ffc107; border-color: #ffc107;">Re-evaluate My Answers</button>
+        <button class="btn regenerate-explanation hide" style="width: auto; padding: 5px 10px; font-size: 0.9em; background-color: #17a2b8; border-color: #17a2b8;">Regenerate Explanation</button>
+      </div>
+      <div class="button-wrapper">
+        <button class="btn previous" disabled>Previous</button>
+        <button class="btn stop">Stop</button>
+        <button class="btn pause hide">Pause</button>
+        <button class="btn next">Check Answers</button>
+      </div>
+    </div> <div class="end-screen hide">
+      <div class="container">
+        <h1 class="heading" id="end-screen-heading"></h1>
+        <div class="score">
+          <span class="score-text">ফাঁকা স্থান স্কোর</span>
+          <div>
+            <span class="final-score">0</span> / <span class="total-score"></span>
+          </div>
+        </div>
+        <div class="answer-status">
+          <div>সঠিক ফাঁকা স্থান: <span class="correct-count">0</span></div> <br />
+          <div>ভুল ফাঁকা স্থান: <span class="wrong-count">0</span></div>   <br />
+          <div>অনুত্তরিত প্রশ্ন: <span class="not-answered-count">0</span></div> </div>
+        <button class="btn restart">পুনরায় শুরু করুন</button>
+      </div>
+    </div>
+
+    <div id="apiKeyModal" class="modal" style="display: none;"> <div class="modal-content">
+        <span class="close-button" id="closeModalButton">×</span>
+        <h2>API Key এবং মডেল নির্বাচন করুন</h2>
+        <div class="modal-input-group">
+          <label for="api-key-input">Gemini API Key:</label>
+          <input type="password" id="api-key-input" placeholder="আপনার API Key এখানে লিখুন" />
+        </div>
+        <div class="modal-input-group">
+          <label for="model-select">মডেল নির্বাচন করুন:</label>
+          <select id="model-select">
+            <option value="">মডেল লোড হচ্ছে...</option>
+          </select>
+        </div>
+        <p class="modal-error-message hide" id="modal-error-message"></p>
+        <button class="btn" id="modal-submit-button">কুইজ শুরু করুন</button>
+      </div>
+    </div>
+
+    <script src="grammer.js"></script> <script src="quizlish.js"></script>
+    <script type="text/javascript" async src="TeX-MML-AM_CHTML.js"></script> <script src="MathJax-2.7.7/MathJax.js"></script>
+  </body>
+</html>

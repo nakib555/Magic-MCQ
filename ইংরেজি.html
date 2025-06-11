@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="ইংরেজি ২য় পত্র.css">
+    <title>English 2nd Paper</title>
+    <style>
+        /* Style for the iframe container if you want to control its appearance */
+        #quiz-iframe-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Optional overlay */
+            display: none; /* Hidden by default */
+            z-index: 2000; /* Ensure it's on top */
+            justify-content: center;
+            align-items: center;
+        }
+        #quiz-iframe {
+            width: 95%; /* Or your desired width */
+            height: 95%; /* Or your desired height */
+            border: none;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <a href="subject.html" class="floating-box">
+        <div class="arrow"></div>
+    </a>
+    <div class="container">
+        <div class="header" id="header">
+            <h1 class="typing-text" data-text="Magic MCQ"></h1>
+            <h2 class="typing-text" data-text="English 2nd Paper"></h2>
+            <h3 class="typing-text" data-text="Select the topic"></h3>
+        </div>
+        <div class="subject" role="button" data-subject-name="Gap filling activities without clues (for prepositions)">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Gap filling activities without clues (for prepositions)"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject" role="button" data-subject-name="Gap filling activities with clues">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Gap filling activities with clues"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <!-- New entry added here -->
+        <div class="subject" role="button" data-subject-name="Completing sentences">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Completing sentences"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject" role="button" data-subject-name="Use of verbs (right form of verbs and subject-verb agreement as per context)">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of verbs (right form of verbs and subject-verb agreement as per context)"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject" role="button" data-subject-name="Use of modifiers">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of modifiers"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject" role="button" data-subject-name="Use of sentence connectors">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of sentence connectors"></span>
+            <div class="arr"><div></div></div>
+        </div>
+        <div class="subject" role="button" data-subject-name="Use of synonyms and antonyms">
+            <span class="subject-icon"><img src="mcq exam.gif" alt="subject icon"></span>
+            <span class="typing-text" data-text="Use of synonyms and antonyms"></span>
+            <div class="arr"><div></div></div>
+        </div>
+    </div>
+
+    <!-- Iframe Container (Hidden by default) -->
+    <div id="quiz-iframe-container">
+        <iframe id="quiz-iframe" src="quizlish.html"></iframe>
+    </div>
+
+    <script>
+        function typeText(element, text, speed) {
+            let i = 0;
+            function typing() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typing, speed);
+                }
+            }
+            typing();
+        }
+
+        let quizIframe = null;
+        let quizIframeContainer = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            quizIframe = document.getElementById("quiz-iframe");
+            quizIframeContainer = document.getElementById("quiz-iframe-container");
+
+            const typingElements = document.querySelectorAll(".typing-text");
+            typingElements.forEach(el => {
+                const text = el.getAttribute("data-text");
+                el.textContent = '';
+                let speed = 30;
+                typeText(el, text, speed);
+            });
+
+            const header = document.querySelector(".header");
+            const container = document.querySelector(".container");
+            function adjustContainerMargin() {
+                const headerHeight = header.offsetHeight;
+                container.style.marginTop = headerHeight + "px";
+            }
+
+            adjustContainerMargin();
+            window.addEventListener("resize", adjustContainerMargin);
+
+            // Add click listeners to subject divs
+            const subjectDivs = document.querySelectorAll(".subject");
+            subjectDivs.forEach(div => {
+                div.addEventListener("click", function() {
+                    const subjectName = this.dataset.subjectName || this.querySelector('.typing-text').getAttribute('data-text');
+                    if (subjectName && quizIframe && quizIframeContainer) {
+                        console.log("Parent: Clicked on subject:", subjectName);
+                        quizIframeContainer.style.display = "flex"; // Show the iframe container
+
+                        // Send message to iframe *after* it's likely loaded or when it signals readiness
+                        // Option 1: Send immediately (might be too soon if iframe is still loading)
+                        // quizIframe.contentWindow.postMessage({ subjectName: subjectName }, '*');
+
+                        // Option 2: Wait for 'quizReady' message from iframe (more robust)
+                        // This requires quiz.js to send 'quizReady' on DOMContentLoaded
+                        // For now, let's try sending after a short delay, or assume quizReady will handle it.
+                        // If quiz.js sends 'quizReady', we don't need to send subjectName here initially.
+                        // The quiz.js will receive the subjectName when it's ready.
+                    } else {
+                        console.error("Subject name, iframe or container not found for:", this);
+                    }
+                });
+            });
+
+            // Listen for messages from the iframe
+            window.addEventListener("message", function(event) {
+                // Optional: Check event.origin for security
+                // if (event.origin !== "expected_iframe_origin") return;
+
+                if (event.data && event.data.type === "closeQuiz") {
+                    if (quizIframeContainer) {
+                        quizIframeContainer.style.display = "none";
+                        // Optionally, reload the iframe to reset its state for next time
+                        if (quizIframe) quizIframe.src = quizIframe.src;
+                    }
+                } else if (event.data && event.data.type === "quizReady") {
+                    // This is where you'd send the subjectName if a subject was clicked *before* quiz was ready
+                    // For simplicity with the current setup, we assume the click event on subject
+                    // will trigger showing the iframe, and the quiz.js will then be ready.
+                    // If a subject was already "active" you could send its name here.
+                    console.log("Parent: Received quizReady from iframe.");
+                    // Example: if you stored the last clicked subject:
+                    // const lastClickedSubject = document.querySelector('.subject.active'); // pseudo-code
+                    // if (lastClickedSubject && quizIframe) {
+                    //    const subjectName = lastClickedSubject.dataset.subjectName;
+                    //    quizIframe.contentWindow.postMessage({ subjectName: subjectName }, '*');
+                    // }
+                }
+            });
+        });
+
+        // This function is called when a subject div is clicked
+        // It assumes the iframe is already part of the DOM (even if hidden)
+        function openQuizForSubject(subjectDivElement) {
+            const subjectName = subjectDivElement.dataset.subjectName || subjectDivElement.querySelector('.typing-text').getAttribute('data-text');
+            if (subjectName && quizIframe && quizIframeContainer) {
+                console.log("Parent: Opening quiz for subject:", subjectName);
+                quizIframeContainer.style.display = "flex"; // Show the iframe container
+
+                // Send the subject name to the iframe
+                // It's better if quiz.js requests this info or if we wait for quizReady
+                // For now, let's send it. Quiz.js should be able to handle it even if it receives it early.
+                quizIframe.contentWindow.postMessage({ subjectName: subjectName }, '*');
+
+            } else {
+                console.error("Subject name, iframe or container not found for:", subjectDivElement);
+            }
+        }
+
+        // Modify subject click listener to use the new function
+        document.addEventListener("DOMContentLoaded", function() {
+            // ... (other DOMContentLoaded code) ...
+            const subjectDivs = document.querySelectorAll(".subject");
+            subjectDivs.forEach(div => {
+                // Add data-subject-name attribute if it's missing, based on the text
+                if (!div.dataset.subjectName) {
+                    const textSpan = div.querySelector('.typing-text');
+                    if (textSpan) {
+                        div.dataset.subjectName = textSpan.getAttribute('data-text');
+                    }
+                }
+
+                div.addEventListener("click", function() {
+                    openQuizForSubject(this);
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>

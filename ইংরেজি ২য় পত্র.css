@@ -6,7 +6,7 @@ body {
   background-color: #fff;
   margin: 0;
   padding: 0;
-  display: flex;
+  /* display: flex; */ /* Removed to allow normal page flow */
 }
 
 html {
@@ -15,10 +15,11 @@ html {
 
 .container {
   width: 100%;
-  max-width: auto;
+  max-width: auto; /* Can be set to a specific max-width like 1200px */
   margin: auto;
   padding: 20px;
   background-color: #fff;
+  box-sizing: border-box; /* Added for better padding behavior */
 }
 
 .header {
@@ -32,18 +33,22 @@ html {
   z-index: 1000;
   margin-bottom: 20px;
   box-sizing: border-box;
+  padding: 10px 0; /* Added some padding */
 }
 
 .header h1 {
   font-size: 31px;
+  margin: 5px 0; /* Adjusted margin */
 }
 .header h2 {
   font-size: 20px;
+  margin: 5px 0; /* Adjusted margin */
 }
 .header h3 {
   font-size: 16.5px;
   opacity: 0.75;
   font-weight: normal;
+  margin: 5px 0; /* Adjusted margin */
 }
 
 
@@ -52,7 +57,7 @@ html {
   align-items: center;
   background-color: rgba(173, 216, 238, 0.5);
   padding: 10px;
-  top:-10px;
+  /* top:-10px; */ /* This might not be needed if header margin is handled */
   margin-bottom: 10px;
   border-radius: 10px;
   text-decoration: none;
@@ -64,16 +69,25 @@ html {
 }
 
 .subject-icon {
-  /* ... other styles ... */
-  width: 35px;  /* Adjust as needed */
-  height: 35px; /* Adjust as needed */
-  display: flex;
-  margin-right: 9px; 
+  width: 35px;
+  height: 35px;
+  display: flex; /* Kept for consistency if icon needs centering */
+  margin-right: 9px;
+}
+.subject-icon img { /* Ensure image inside icon scales */
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
-.subject span:last-child {
-  opacity: 0.75;
+
+.subject span:last-child { /* This targets the arrow div now, might need adjustment */
+  /* opacity: 0.75; */ /* Commented out if not desired for arrow */
 }
+.subject .typing-text { /* Target the text span specifically */
+    flex-grow: 1; /* Allow text to take available space */
+}
+
 
 .arr div {
   position: absolute;
@@ -84,7 +98,7 @@ html {
   transform: translateY(-50%) rotate(135deg);
   right: 10px;
   top: 50%;
-  border-radius: 2.5px; /* Adjust the value as needed */
+  border-radius: 2.5px;
 }
 
 .floating-box {
@@ -97,26 +111,51 @@ html {
   border-radius: 50%;
   transition: 0.4s ease;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 1001; /* Ensure it's above other elements */
   text-decoration: none;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.arrow {
-  position: absolute;
+.arrow { /* This is for the back arrow inside floating-box */
+  /* position: absolute; */ /* Not needed if flex is centering */
   height: 12px;
   width: 12px;
   border-top: 2px solid #202020;
   border-left: 2px solid #202020;
   transform: rotate(-45deg);
-  top: 30%;
-  left: 38%;
-  border-radius: 2.5px; /* Adjust the value as needed */
+  /* top: 30%; */ /* Not needed */
+  /* left: 38%; */ /* Not needed */
+  border-radius: 2.5px;
 }
 
 /* Fix progress scroll issue */
 html, body {
   scroll-behavior: smooth;
+}
+
+/* Style for the quiz iframe container */
+#quiz-iframe-container {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7); /* Semi-transparent background */
+    z-index: 2000; /* High z-index to be on top */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#quiz-iframe {
+    width: 95%;
+    max-width: 800px; /* Or your preferred max width */
+    height: 95%;
+    border: none;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
 }
